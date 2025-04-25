@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewFace | فروشگاه لوازم آرایشی</title>
+  <style>
+    body {
+      font-family: 'Tahoma', sans-serif;
+      background-color: #fff0f5;
+      margin: 0;
+      padding: 0;
+      direction: rtl;
+    }
+
+    header {
+      background: #f48fb1;
+      padding: 1.5rem;
+      text-align: center;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .categories {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr); /* 2 ستون */
+      gap: 1.5rem;
+      padding: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .category-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 1rem 2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      font-size: 1.2rem;
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .category-card:hover {
+      background-color: #fce4ec;
+      transform: translateY(-4px);
+    }
+
+    .category-card.active {
+      transform: scale(1.1);  /* اینجا سایز دسته‌بندی انتخابی بزرگتر می‌شود */
+      background-color: #f48fb1;
+      color: white;
+    }
+
+    .category-card.inactive {
+      transform: scale(0.7);  /* اینجا سایز سایر دسته‌بندی‌ها کوچک می‌شود */
+    }
+
+    /* محصولات */
+    .products {
+      display: none;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 1rem;
+      width: 200px;
+      text-align: center;
+      font-size: 1.1rem;
+      transition: transform 0.3s ease;
+    }
+
+    .product-card:hover {
+      background-color: #fce4ec;
+      transform: translateY(-4px);
+    }
+
+    .product-caption {
+      display: none;
+      font-size: 1rem;
+      color: #777;
+      margin-top: 10px;
+    }
+
+    .product-card img {
+      width: 100%;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* راهنما:
+       - تغییر فونت: body { font-family }
+       - تغییر اندازه فونت دسته‌بندی‌ها: .category-card { font-size }
+       - تغییر اندازه فونت محصولات: .product-card { font-size }
+       - اضافه‌کردن محصولات: بخش‌های <div class="products"> در HTML
+       - تغییر عکس محصولات: درون هر .product-card > <img>
+    */
+  </style>
+</head>
+<body>
+  <header>
+    NewFace | فروشگاه لوازم آرایشی
+  </header>
+
+  <div class="categories">
+    <div class="category-card" onclick="showProducts('skinCare')" id="skinCare">مراقبت پوستی</div>
+    <div class="category-card" onclick="showProducts('makeup')" id="makeup">آرایشی</div>
+    <div class="category-card" onclick="showProducts('healthCare')" id="healthCare">بهداشتی</div>
+    <div class="category-card" onclick="showProducts('hairCare')" id="hairCare">مراقبت مو</div>
+    <div class="category-card" onclick="showProducts('fragrances')" id="fragrances">عطر و ادکلن</div>
+  </div>
+
+  <div class="products" id="skinCareProducts">
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="d:\main-1.jpg" alt="نمک بدن">
+      <div>یوول</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="d:\main-1.jpg" alt="نمک بدن">
+      <div>یوول2</div>
+      <div class="product-caption">کپشن</div>
+    </div>    
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="d:\main-1.jpg" alt="نمک بدن">
+      <div>یوول</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="d:\main-1.jpg" alt="نمک بدن">
+      <div>یوول2</div>
+      <div class="product-caption">کپشن</div>
+    </div>    
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 2">
+      <div>محصول 2</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 3">
+      <div>محصول 3</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="d:\main-1.jpg" alt="نمک بدن">
+      <div>یوول</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="d:\main-1.jpg" alt="نمک بدن">
+      <div>یوول2</div>
+      <div class="product-caption">کپشن</div>
+    </div>    
+  </div>
+
+  <div class="products" id="makeupProducts">
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 4">
+      <div>محصول 4</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 5">
+      <div>محصول 5</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+  </div>
+
+  <div class="products" id="healthCareProducts">
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 6">
+      <div>محصول 6</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 7">
+      <div>محصول 7</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+  </div>
+
+  <div class="products" id="hairCareProducts">
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 8">
+      <div>محصول 8</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 9">
+      <div>محصول 9</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+  </div>
+
+  <div class="products" id="fragrancesProducts">
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 10">
+      <div>محصول 10</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+    <div class="product-card" onclick="toggleCaption(this)">
+      <img src="https://via.placeholder.com/200" alt="محصول 11">
+      <div>محصول 11</div>
+      <div class="product-caption">کپشن</div>
+    </div>
+  </div>
+
+  <script>
+    function showProducts(category) {
+      const categories = document.querySelectorAll('.category-card');
+      categories.forEach(cat => {
+        cat.classList.remove('active');
+        cat.classList.add('inactive');
+      });
+
+      const selectedCategory = document.getElementById(category);
+      selectedCategory.classList.remove('inactive');
+      selectedCategory.classList.add('active');
+
+      const allProducts = document.querySelectorAll('.products');
+      allProducts.forEach(products => {
+        products.style.display = 'none';
+      });
+
+      const selectedProducts = document.getElementById(category + 'Products');
+      selectedProducts.style.display = 'flex';
+    }
+
+    function toggleCaption(product) {
+      const caption = product.querySelector('.product-caption');
+      if (caption.style.display === 'block') {
+        caption.style.display = 'none';
+      } else {
+        caption.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
