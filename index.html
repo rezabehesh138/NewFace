@@ -1,2498 +1,2917 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#CC3A63">
+
+    <title>NEWFACE | استعلام قیمت</title>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Barcode Scanner -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #CC3A63;
+            --primary-dark: #A92F50;
+            --primary-soft: #FFF2F5;
+
+            --success: #18834D;
+            --success-soft: #ECF9F2;
+
+            --danger: #C62828;
+            --danger-soft: #FFF0F0;
+
+            --warning: #A56A00;
+            --warning-soft: #FFF7E5;
+
+            --bg: #F5F5F7;
+            --surface: #FFFFFF;
+            --surface-soft: #FAFAFB;
+
+            --text: #202124;
+            --muted: #777B82;
+            --border: #E7E7EA;
+
+            --radius: 18px;
+            --radius-small: 12px;
+
+            --shadow:
+                0 4px 18px rgba(0, 0, 0, 0.055);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+
+            font-family:
+                Tahoma,
+                Arial,
+                "Segoe UI",
+                sans-serif;
+
+            line-height: 1.7;
+        }
+
+        button,
+        input {
+            font-family: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        /* =====================================================
+           APP
+        ===================================================== */
+
+        .app {
+            width: 100%;
+            max-width: 720px;
+            min-height: 100vh;
+            margin: 0 auto;
+        }
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+            background:
+                linear-gradient(
+                    135deg,
+                    #CC3A63 0%,
+                    #B83157 100%
+                );
 
-<meta charset="UTF-8">
+            color: white;
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            padding:
+                calc(20px + env(safe-area-inset-top))
+                18px
+                22px;
 
-<title>نیوفیس | قیمت محصولات</title>
+            border-radius: 0 0 28px 28px;
 
+            box-shadow:
+                0 7px 24px rgba(204, 58, 99, 0.18);
+        }
 
-<!-- ================= SUPABASE ================= -->
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        .brand {
+            min-width: 0;
+        }
 
+        .brand-name {
+            margin: 0;
+            font-size: 24px;
+            line-height: 1.2;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
 
-<!-- ================= BARCODE SCANNER ================= -->
+        .brand-description {
+            margin: 5px 0 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+        .connection-badge {
+            flex-shrink: 0;
 
+            display: flex;
+            align-items: center;
+            gap: 7px;
 
-<!-- ================= EXCEL ================= -->
+            padding: 7px 10px;
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+            border-radius: 999px;
 
+            background:
+                rgba(255,255,255,0.14);
 
-<!-- ================= FONT ================= -->
+            border:
+                1px solid rgba(255,255,255,0.15);
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
+            font-size: 10px;
+            white-space: nowrap;
+        }
 
-<link rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin>
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #FFD0D0;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet">
+        .connection-badge.online .connection-dot {
+            background: #5DFFAE;
+        }
 
+        .connection-badge.offline .connection-dot {
+            background: #FF6B6B;
+        }
 
-<style>
+        /* =====================================================
+           MAIN
+        ===================================================== */
 
-/* =========================================================
-   VARIABLES
-========================================================= */
+        main {
+            padding: 16px 13px 35px;
+        }
 
-:root{
+        .section {
+            margin-bottom: 14px;
+        }
 
-    --pink:#CC3A63;
+        .card {
+            background: var(--surface);
 
-    --pink-dark:#A82C50;
+            border:
+                1px solid var(--border);
 
-    --pink-light:#FCE9EF;
+            border-radius:
+                var(--radius);
 
-    --bg:#F6F6F8;
+            box-shadow:
+                var(--shadow);
 
-    --card:#FFFFFF;
+            padding: 17px;
+        }
 
-    --text:#202124;
+        .section-heading {
+            margin-bottom: 14px;
+        }
 
-    --muted:#777;
+        .section-title {
+            margin: 0;
 
-    --border:#E6E6EA;
+            font-size: 16px;
+            line-height: 1.5;
 
-    --green:#15966A;
+            font-weight: 900;
+        }
 
-    --red:#D43B3B;
+        .section-description {
+            margin: 3px 0 0;
 
-}
+            color: var(--muted);
 
+            font-size: 11px;
+            line-height: 1.7;
+        }
 
-/* =========================================================
-   GENERAL
-========================================================= */
+        /* =====================================================
+           CONNECTION CARD
+        ===================================================== */
 
-*{
+        .connection-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
 
-    box-sizing:border-box;
+            gap: 12px;
+        }
 
-    -webkit-tap-highlight-color:transparent;
+        .connection-info {
+            min-width: 0;
+        }
 
-}
+        .connection-title {
+            font-size: 13px;
+            font-weight: 800;
+        }
 
+        .connection-description {
+            margin-top: 2px;
 
-body{
+            color: var(--muted);
 
-    margin:0;
+            font-size: 10px;
+            line-height: 1.5;
+        }
 
-    background:var(--bg);
+        .retry-button {
+            flex-shrink: 0;
 
-    color:var(--text);
+            border: 0;
 
-    font-family:"Vazirmatn",sans-serif;
+            background: var(--primary-soft);
+            color: var(--primary-dark);
 
-}
+            border-radius: 10px;
 
+            padding: 7px 10px;
 
-button,
-input{
+            font-size: 10px;
+            font-weight: 800;
+        }
 
-    font-family:inherit;
+        /* =====================================================
+           SEARCH
+        ===================================================== */
 
-}
+        .scanner-button {
+            width: 100%;
+            min-height: 54px;
 
+            border: 0;
+            border-radius: 14px;
 
-.app{
+            background: var(--primary);
+            color: white;
 
-    width:100%;
+            font-size: 16px;
+            font-weight: 900;
 
-    max-width:540px;
+            box-shadow:
+                0 5px 14px rgba(204, 58, 99, 0.18);
 
-    min-height:100vh;
+            transition: transform 0.15s ease;
+        }
 
-    margin:auto;
+        .scanner-button:active {
+            transform: scale(0.985);
+        }
 
-}
+        .search-row {
+            display: flex;
+            gap: 8px;
 
+            margin-top: 9px;
+        }
 
-/* =========================================================
-   HEADER
-========================================================= */
+        .barcode-input {
+            flex: 1;
+            min-width: 0;
 
-.header{
+            height: 52px;
 
-    background:
-        linear-gradient(
-            135deg,
-            #CC3A63,
-            #B42D53
-        );
+            background: white;
 
-    color:#fff;
+            border:
+                2px solid var(--border);
 
-    padding:24px 18px 28px;
+            border-radius: 13px;
 
-    border-radius:
-        0
-        0
-        28px
-        28px;
+            outline: none;
 
-    box-shadow:
-        0 10px 30px
-        rgba(204,58,99,.22);
+            direction: ltr;
+            text-align: center;
 
-}
+            font-family: monospace;
+            font-size: 19px;
+            font-weight: 700;
 
+            transition:
+                border-color 0.18s ease,
+                box-shadow 0.18s ease;
+        }
 
-.header-top{
+        .barcode-input:focus {
+            border-color: var(--primary);
 
-    display:flex;
+            box-shadow:
+                0 0 0 3px
+                rgba(204, 58, 99, 0.08);
+        }
 
-    justify-content:space-between;
+        .search-button {
+            width: 56px;
+            height: 52px;
 
-    align-items:center;
+            flex-shrink: 0;
 
-}
+            border: 0;
+            border-radius: 13px;
 
+            background: #252525;
+            color: white;
 
-.logo{
+            font-size: 19px;
+        }
 
-    font-size:27px;
+        /* =====================================================
+           STATUS
+        ===================================================== */
 
-    font-weight:800;
+        .status {
+            display: none;
 
-}
+            margin-top: 10px;
 
+            padding: 10px 12px;
 
-.subtitle{
+            border-radius: 11px;
 
-    font-size:10px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
 
-    opacity:.85;
+        .status.show {
+            display: block;
+        }
 
-    margin-top:3px;
+        .status.success {
+            background: var(--success-soft);
+            color: var(--success);
+        }
 
-}
+        .status.error {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
 
+        .status.warning {
+            background: var(--warning-soft);
+            color: var(--warning);
+        }
 
-/* =========================================================
-   CONNECTION STATUS
-========================================================= */
+        /* =====================================================
+           SCANNER
+        ===================================================== */
 
-.connection{
+        .scanner-panel {
+            display: none;
 
-    display:flex;
+            margin-top: 12px;
 
-    align-items:center;
+            padding: 10px;
 
-    gap:7px;
+            background: #171717;
 
-    padding:
-        7px
-        11px;
+            border-radius: 15px;
+        }
 
-    border-radius:30px;
+        .scanner-panel.show {
+            display: block;
+        }
 
-    background:
-        rgba(255,255,255,.14);
+        #reader {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 11px;
+            background: #111;
+        }
 
-    font-size:10px;
+        #reader video {
+            border-radius: 11px;
+        }
 
-}
+        .scanner-help {
+            color: #DDD;
 
+            font-size: 10px;
+            text-align: center;
 
-.connection-dot{
+            padding: 8px 4px 5px;
+        }
 
-    width:8px;
+        .scanner-actions {
+            display: grid;
 
-    height:8px;
+            grid-template-columns: 1fr 1fr;
 
-    border-radius:50%;
+            gap: 7px;
+        }
 
-    background:#FFD65A;
+        /* =====================================================
+           PRODUCT
+        ===================================================== */
 
-}
+        .product-card {
+            display: none;
 
+            margin-top: 12px;
 
-.connection.connected .connection-dot{
+            animation:
+                productAppear 0.2s ease;
+        }
 
-    background:#65F5A2;
+        .product-card.show {
+            display: block;
+        }
 
-}
+        @keyframes productAppear {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
 
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-.connection.error .connection-dot{
+        .product-label {
+            color: var(--muted);
 
-    background:#FF7777;
+            font-size: 10px;
+            font-weight: 700;
+        }
 
-}
+        .product-name {
+            margin: 2px 0 14px;
 
+            font-size: 18px;
+            line-height: 1.65;
 
-/* =========================================================
-   SEARCH
-========================================================= */
+            font-weight: 900;
+        }
 
-.search-box{
+        .price-area {
+            padding:
+                13px 14px;
 
-    margin-top:22px;
+            background:
+                var(--primary-soft);
 
-    background:#fff;
+            border-radius:
+                13px;
 
-    border-radius:16px;
+            margin-bottom: 11px;
+        }
 
-    padding:5px;
+        .price-label {
+            color: var(--primary-dark);
 
-    display:flex;
+            font-size: 10px;
+            font-weight: 700;
+        }
 
-    box-shadow:
-        0 8px 25px
-        rgba(0,0,0,.12);
+        .current-price {
+            margin-top: 1px;
 
-}
+            color: var(--primary);
 
+            font-size: 28px;
+            line-height: 1.3;
 
-.search-input{
+            font-weight: 900;
+        }
 
-    flex:1;
+        .code-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
 
-    min-width:0;
+            gap: 10px;
 
-    border:0;
+            padding-bottom: 13px;
 
-    outline:none;
+            border-bottom:
+                1px solid var(--border);
+        }
 
-    padding:12px;
+        .code-label {
+            color: var(--muted);
+            font-size: 10px;
+        }
 
-    font-size:14px;
+        .product-code {
+            direction: ltr;
+            text-align: center;
 
-    direction:ltr;
+            background: #F3F3F5;
 
-    text-align:right;
+            border-radius: 8px;
 
-}
+            padding: 3px 8px;
 
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: 700;
+        }
 
-.search-input::placeholder{
+        .product-actions {
+            display: grid;
 
-    direction:rtl;
+            grid-template-columns: 1fr 1fr;
 
-    color:#999;
+            gap: 8px;
 
-}
+            margin-top: 12px;
+        }
 
+        /* =====================================================
+           BUTTONS
+        ===================================================== */
 
-.search-btn{
+        .btn {
+            min-height: 46px;
 
-    width:45px;
+            border: 0;
+            border-radius: 12px;
 
-    height:45px;
+            padding: 9px 12px;
 
-    border:0;
+            font-size: 12px;
+            font-weight: 800;
 
-    border-radius:12px;
+            transition: transform 0.12s ease;
+        }
 
-    background:var(--pink);
+        .btn:active {
+            transform: scale(0.98);
+        }
 
-    color:#fff;
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
 
-    font-size:19px;
+        .btn-secondary {
+            background: #F1F1F3;
+            color: #333;
+        }
 
-}
+        .btn-danger {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
 
+        /* =====================================================
+           PREVIOUS PRICE
+        ===================================================== */
 
-/* =========================================================
-   CONTENT
-========================================================= */
+        .previous-price {
+            display: none;
 
-.content{
+            margin-top: 10px;
 
-    padding:
-        20px
-        15px
-        40px;
+            padding: 10px 12px;
 
-}
+            border-radius: 11px;
 
+            background: #FFF8FA;
 
-.section-title{
+            border:
+                1px solid #F1D4DD;
 
-    display:flex;
+            color: #7E3A4D;
 
-    justify-content:space-between;
+            font-size: 11px;
+        }
 
-    align-items:center;
+        .previous-price.show {
+            display: block;
+        }
 
-    margin:
-        5px
-        3px
-        10px;
+        /* =====================================================
+           EDIT PRICE
+        ===================================================== */
 
-}
+        .edit-box {
+            display: none;
 
+            margin-top: 12px;
+            padding-top: 12px;
 
-.section-title h2{
+            border-top:
+                1px solid var(--border);
+        }
 
-    margin:0;
+        .edit-box.show {
+            display: block;
+        }
 
-    font-size:15px;
+        .input-label {
+            display: block;
 
-}
+            margin-bottom: 5px;
 
+            color: var(--muted);
 
-.section-title span{
+            font-size: 10px;
+        }
 
-    color:var(--muted);
+        .price-input {
+            width: 100%;
+            height: 49px;
 
-    font-size:10px;
+            border:
+                2px solid var(--border);
 
-}
+            border-radius: 11px;
 
+            outline: none;
 
-/* =========================================================
-   CARD
-========================================================= */
+            direction: ltr;
+            text-align: left;
 
-.card{
+            padding: 0 12px;
 
-    background:#fff;
+            font-size: 17px;
+            font-weight: 700;
+        }
 
-    border:
-        1px
-        solid
-        var(--border);
+        .price-input:focus {
+            border-color: var(--primary);
+        }
 
-    border-radius:20px;
+        .edit-actions {
+            display: grid;
 
-    padding:16px;
+            grid-template-columns: 1fr 1fr;
 
-    box-shadow:
-        0 8px 25px
-        rgba(0,0,0,.05);
+            gap: 7px;
 
-}
+            margin-top: 8px;
+        }
 
+        /* =====================================================
+           EXCEL
+        ===================================================== */
 
-/* =========================================================
-   SCAN BUTTON
-========================================================= */
+        .file-picker {
+            position: relative;
 
-.scan-btn{
+            overflow: hidden;
 
-    width:100%;
+            width: 100%;
+        }
 
-    height:62px;
+        .file-picker input {
+            position: absolute;
 
-    border:0;
+            inset: 0;
 
-    border-radius:16px;
+            opacity: 0;
 
-    background:var(--pink);
+            cursor: pointer;
+        }
 
-    color:#fff;
+        .file-button {
+            min-height: 51px;
 
-    font-size:15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-    font-weight:700;
+            border:
+                2px dashed #DADADF;
 
-}
+            border-radius: 12px;
 
+            background: #FAFAFB;
 
-.scan-btn:active{
+            color: #555;
 
-    transform:scale(.98);
+            font-size: 12px;
+            font-weight: 800;
+        }
 
-}
+        .excel-info {
+            margin-top: 8px;
 
+            color: var(--muted);
 
-.scan-description{
+            font-size: 10px;
+            line-height: 1.7;
+        }
 
-    text-align:center;
+        .preview {
+            display: none;
 
-    color:var(--muted);
+            margin-top: 13px;
+        }
 
-    font-size:10px;
+        .preview.show {
+            display: block;
+        }
 
-    margin-top:10px;
+        .preview-summary {
+            padding: 11px 12px;
 
-}
+            background:
+                var(--primary-soft);
 
+            color:
+                var(--primary-dark);
 
-/* =========================================================
-   PRODUCT
-========================================================= */
+            border-radius: 11px;
 
-.product{
+            font-size: 12px;
+            font-weight: 800;
 
-    display:none;
+            margin-bottom: 9px;
+        }
 
-    margin-top:18px;
+        .table-container {
+            overflow-x: auto;
 
-    background:#fff;
+            border:
+                1px solid var(--border);
 
-    border:
-        1px
-        solid
-        var(--border);
+            border-radius: 11px;
+        }
 
-    border-radius:20px;
+        table {
+            width: 100%;
 
-    overflow:hidden;
+            min-width: 430px;
 
-    box-shadow:
-        0 8px 25px
-        rgba(0,0,0,.05);
+            border-collapse: collapse;
 
-}
+            font-size: 10px;
+        }
 
+        th,
+        td {
+            padding: 8px 9px;
 
-.product-main{
+            border-bottom:
+                1px solid var(--border);
 
-    padding:20px;
+            white-space: nowrap;
 
-}
+            text-align: right;
+        }
 
+        th {
+            background: #F7F7F8;
+            font-weight: 900;
+        }
 
-.code{
+        td.barcode-cell {
+            direction: ltr;
+            text-align: center;
 
-    display:inline-block;
+            font-family: monospace;
+        }
 
-    padding:
-        5px
-        11px;
+        .import-actions {
+            display: grid;
 
-    border-radius:20px;
+            grid-template-columns: 1fr 1fr;
 
-    background:var(--pink-light);
+            gap: 7px;
 
-    color:var(--pink-dark);
+            margin-top: 9px;
+        }
 
-    font-size:10px;
+        /* =====================================================
+           PROGRESS
+        ===================================================== */
 
-    font-weight:700;
+        .progress {
+            display: none;
 
-}
+            margin-top: 11px;
+        }
 
+        .progress.show {
+            display: block;
+        }
 
-.product-name{
+        .progress-top {
+            display: flex;
+            justify-content: space-between;
 
-    margin:
-        12px
-        0
-        18px;
+            margin-bottom: 5px;
 
-    font-size:18px;
+            color: var(--muted);
 
-    line-height:1.8;
+            font-size: 10px;
+        }
 
-    font-weight:800;
+        .progress-bar {
+            height: 9px;
 
-}
+            overflow: hidden;
 
+            background: #ECECEF;
 
-.price-label{
+            border-radius: 99px;
+        }
 
-    color:var(--muted);
+        .progress-fill {
+            width: 0%;
+            height: 100%;
 
-    font-size:10px;
+            background: var(--primary);
 
-}
+            border-radius: inherit;
 
+            transition:
+                width 0.2s ease;
+        }
 
-.price{
+        /* =====================================================
+           DEVELOPER
+        ===================================================== */
 
-    color:var(--pink);
+        details {
+            background: white;
 
-    font-size:30px;
+            border:
+                1px solid var(--border);
 
-    font-weight:800;
+            border-radius: 14px;
 
-    margin-top:2px;
+            overflow: hidden;
+        }
 
-}
+        summary {
+            padding: 12px 14px;
 
+            cursor: pointer;
 
-.toman{
+            color: #555;
 
-    color:var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+        }
 
-    font-size:11px;
+        .developer-content {
+            padding:
+                0 14px 14px;
+        }
 
-    font-weight:500;
+        .test-row {
+            display: flex;
 
-}
+            gap: 7px;
+        }
 
+        .test-input {
+            flex: 1;
+            min-width: 0;
 
-/* =========================================================
-   ACTIONS
-========================================================= */
+            height: 43px;
 
-.actions{
+            border:
+                1px solid var(--border);
 
-    display:grid;
+            border-radius: 10px;
 
-    grid-template-columns:
-        1fr
-        1fr;
+            direction: ltr;
+            text-align: center;
 
-    gap:9px;
+            font-family: monospace;
+        }
 
-    padding:
-        0
-        20px
-        20px;
+        .technical-error {
+            display: none;
 
-}
+            margin-top: 10px;
 
+            background: #222;
 
-.action{
+            color: #EEE;
 
-    min-height:48px;
+            border-radius: 10px;
 
-    border:
-        1px
-        solid
-        var(--border);
+            padding: 10px;
 
-    border-radius:13px;
+            direction: ltr;
+            text-align: left;
 
-    background:#fff;
+            font-family: monospace;
+            font-size: 9px;
 
-    font-size:11px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
 
-    font-weight:600;
+        .technical-error.show {
+            display: block;
+        }
 
-}
+        /* =====================================================
+           LOADING
+        ===================================================== */
 
+        .loading-overlay {
+            position: fixed;
 
-.action.primary{
+            inset: 0;
 
-    border:0;
+            z-index: 9999;
 
-    background:var(--pink-light);
+            display: none;
+            align-items: center;
+            justify-content: center;
 
-    color:var(--pink-dark);
+            background:
+                rgba(255,255,255,0.82);
 
-}
+            backdrop-filter:
+                blur(3px);
+        }
 
+        .loading-overlay.show {
+            display: flex;
+        }
 
-/* =========================================================
-   PREVIOUS PRICE
-========================================================= */
+        .loading-card {
+            width: 210px;
 
-.previous{
+            padding: 23px;
 
-    display:none;
+            background: white;
 
-    margin:
-        0
-        20px
-        18px;
+            border-radius: 17px;
 
-    padding:13px;
+            box-shadow: var(--shadow);
 
-    border-radius:12px;
+            text-align: center;
+        }
 
-    background:#F7F7F8;
+        .spinner {
+            width: 34px;
+            height: 34px;
 
-    color:var(--muted);
+            margin:
+                0 auto 10px;
 
-    font-size:11px;
+            border:
+                4px solid #EEEEF0;
 
-}
+            border-top-color:
+                var(--primary);
 
+            border-radius: 50%;
 
-.previous strong{
+            animation:
+                spin 0.75s linear infinite;
+        }
 
-    color:var(--text);
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
-}
+        .loading-text {
+            font-size: 12px;
+            font-weight: 800;
+        }
 
+        /* =====================================================
+           FOOTER
+        ===================================================== */
 
-/* =========================================================
-   EDIT
-========================================================= */
+        .footer {
+            padding:
+                5px 20px 28px;
 
-.edit{
+            text-align: center;
 
-    display:none;
+            color: #AAA;
 
-    margin:
-        0
-        20px
-        18px;
+            font-size: 9px;
+        }
 
-    padding:15px;
+        /* =====================================================
+           DESKTOP
+        ===================================================== */
 
-    border-radius:15px;
+        @media (min-width: 700px) {
 
-    background:var(--pink-light);
+            main {
+                padding-top: 22px;
+            }
 
-}
-
-
-.edit label{
-
-    display:block;
-
-    color:var(--pink-dark);
-
-    font-size:10px;
-
-    margin-bottom:7px;
-
-}
-
-
-.price-input{
-
-    width:100%;
-
-    height:48px;
-
-    border:
-        1px
-        solid
-        #E2A7B8;
-
-    border-radius:12px;
-
-    outline:none;
-
-    background:#fff;
-
-    padding:0 13px;
-
-    font-size:15px;
-
-    direction:ltr;
-
-    text-align:right;
-
-}
-
-
-.save-btn{
-
-    width:100%;
-
-    height:46px;
-
-    margin-top:9px;
-
-    border:0;
-
-    border-radius:12px;
-
-    background:var(--pink);
-
-    color:#fff;
-
-    font-weight:700;
-
-}
-
-
-/* =========================================================
-   NOT FOUND
-========================================================= */
-
-.not-found{
-
-    display:none;
-
-    text-align:center;
-
-    padding:30px 10px;
-
-    color:var(--muted);
-
-}
-
-
-.not-found-icon{
-
-    font-size:35px;
-
-}
-
-
-.not-found-title{
-
-    color:var(--text);
-
-    font-weight:700;
-
-    font-size:14px;
-
-    margin-top:5px;
-
-}
-
-
-/* =========================================================
-   EXCEL
-========================================================= */
-
-.excel-section{
-
-    margin-top:23px;
-
-}
-
-
-.excel-btn{
-
-    width:100%;
-
-    min-height:55px;
-
-    border:
-        1px
-        dashed
-        #D2D2D7;
-
-    border-radius:14px;
-
-    background:#FAFAFB;
-
-    font-size:12px;
-
-    font-weight:700;
-
-}
-
-
-.excel-info{
-
-    margin-top:10px;
-
-    padding:11px;
-
-    border-radius:12px;
-
-    background:var(--pink-light);
-
-    color:var(--pink-dark);
-
-    font-size:10px;
-
-    line-height:2;
-
-}
-
-
-#excelFile{
-
-    display:none;
-
-}
-
-
-/* =========================================================
-   IMPORT RESULT
-========================================================= */
-
-.import-result{
-
-    display:none;
-
-    margin-top:14px;
-
-    background:#fff;
-
-    border:
-        1px
-        solid
-        var(--border);
-
-    border-radius:20px;
-
-    padding:17px;
-
-    box-shadow:
-        0 8px 25px
-        rgba(0,0,0,.05);
-
-}
-
-
-.import-result h3{
-
-    margin:
-        0
-        0
-        14px;
-
-    font-size:14px;
-
-}
-
-
-.stats{
-
-    display:grid;
-
-    grid-template-columns:
-        1fr
-        1fr;
-
-    gap:8px;
-
-}
-
-
-.stat{
-
-    background:#F7F7F8;
-
-    border-radius:12px;
-
-    padding:12px;
-
-    text-align:center;
-
-}
-
-
-.stat-number{
-
-    display:block;
-
-    color:var(--pink);
-
-    font-size:18px;
-
-    font-weight:800;
-
-}
-
-
-.stat-label{
-
-    color:var(--muted);
-
-    font-size:9px;
-
-}
-
-
-.import-actions{
-
-    display:grid;
-
-    grid-template-columns:
-        1fr
-        1fr;
-
-    gap:8px;
-
-    margin-top:14px;
-
-}
-
-
-.import-action{
-
-    height:46px;
-
-    border:0;
-
-    border-radius:12px;
-
-    font-size:11px;
-
-    font-weight:700;
-
-}
-
-
-.cancel{
-
-    background:#EFEFF1;
-
-}
-
-
-.confirm{
-
-    background:var(--pink);
-
-    color:#fff;
-
-}
-
-
-/* =========================================================
-   SCANNER
-========================================================= */
-
-.scanner-modal{
-
-    display:none;
-
-    position:fixed;
-
-    inset:0;
-
-    background:#000;
-
-    z-index:9999;
-
-}
-
-
-.scanner-header{
-
-    position:absolute;
-
-    top:0;
-
-    left:0;
-
-    right:0;
-
-    height:70px;
-
-    padding:
-        0
-        17px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-    color:#fff;
-
-    z-index:10;
-
-    background:
-        linear-gradient(
-            rgba(0,0,0,.5),
-            transparent
-        );
-
-}
-
-
-.close-scanner{
-
-    width:42px;
-
-    height:42px;
-
-    border:0;
-
-    border-radius:50%;
-
-    background:
-        rgba(255,255,255,.15);
-
-    color:#fff;
-
-    font-size:25px;
-
-}
-
-
-#reader{
-
-    width:100%;
-
-    height:100%;
-
-}
-
-
-#reader video{
-
-    width:100% !important;
-
-    height:100% !important;
-
-    object-fit:cover !important;
-
-}
-
-
-#reader__dashboard{
-
-    display:none !important;
-
-}
-
-
-#reader__scan_region{
-
-    width:100% !important;
-
-    height:100% !important;
-
-}
-
-
-#reader__scan_region img{
-
-    display:none !important;
-
-}
-
-
-.scanner-help{
-
-    position:absolute;
-
-    left:20px;
-
-    right:20px;
-
-    bottom:25px;
-
-    color:#fff;
-
-    text-align:center;
-
-    font-size:11px;
-
-    z-index:10;
-
-}
-
-
-/* =========================================================
-   CAMERA ERROR
-========================================================= */
-
-.camera-error{
-
-    display:none;
-
-    position:absolute;
-
-    left:20px;
-
-    right:20px;
-
-    top:50%;
-
-    transform:translateY(-50%);
-
-    background:#fff;
-
-    border-radius:20px;
-
-    padding:20px;
-
-    z-index:20;
-
-    color:#222;
-
-    text-align:center;
-
-}
-
-
-.camera-error-title{
-
-    font-size:15px;
-
-    font-weight:800;
-
-    margin-bottom:10px;
-
-}
-
-
-.camera-error-text{
-
-    font-size:11px;
-
-    line-height:2;
-
-    color:#666;
-
-}
-
-
-.camera-retry{
-
-    width:100%;
-
-    height:45px;
-
-    border:0;
-
-    border-radius:12px;
-
-    background:var(--pink);
-
-    color:#fff;
-
-    margin-top:15px;
-
-    font-weight:700;
-
-}
-
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-.toast{
-
-    position:fixed;
-
-    left:15px;
-
-    right:15px;
-
-    bottom:18px;
-
-    padding:13px;
-
-    border-radius:14px;
-
-    background:#222;
-
-    color:#fff;
-
-    text-align:center;
-
-    font-size:11px;
-
-    z-index:20000;
-
-    transform:
-        translateY(100px);
-
-    opacity:0;
-
-    transition:.3s;
-
-}
-
-
-.toast.show{
-
-    transform:
-        translateY(0);
-
-    opacity:1;
-
-}
-
-
-/* =========================================================
-   DESKTOP
-========================================================= */
-
-@media(min-width:600px){
-
-    body{
-
-        padding:20px 0;
-
-    }
-
-
-    .app{
-
-        min-height:
-            calc(100vh - 40px);
-
-        border-radius:28px;
-
-        overflow:hidden;
-
-        box-shadow:
-            0 20px 60px
-            rgba(0,0,0,.08);
-
-    }
-
-}
-
-</style>
-
+            .header {
+                padding-left: 25px;
+                padding-right: 25px;
+            }
+        }
+    </style>
 </head>
-
 
 <body>
 
-
 <div class="app">
 
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
-<!-- =====================================================
-     HEADER
-===================================================== -->
+    <header class="header">
 
-<header class="header">
+        <div class="header-inner">
 
+            <div class="brand">
 
-    <div class="header-top">
+                <h1 class="brand-name">
+                    NEWFACE
+                </h1>
 
+                <p class="brand-description">
+                    استعلام قیمت محصولات
+                </p>
 
-        <div>
-
-            <div class="logo">
-                نیوفیس
             </div>
 
-            <div class="subtitle">
-                استعلام سریع قیمت محصولات
+            <div
+                id="connectionBadge"
+                class="connection-badge"
+            >
+                <span class="connection-dot"></span>
+
+                <span id="connectionText">
+                    بررسی...
+                </span>
             </div>
 
         </div>
 
+    </header>
 
-        <!-- CONNECTION -->
+
+    <main>
+
+        <!-- =================================================
+             CONNECTION
+        ================================================== -->
+
+        <section class="section">
+
+            <div class="card connection-card">
+
+                <div class="connection-info">
+
+                    <div
+                        id="connectionTitle"
+                        class="connection-title"
+                    >
+                        وضعیت اتصال
+                    </div>
+
+                    <div
+                        id="connectionDescription"
+                        class="connection-description"
+                    >
+                        در حال بررسی اتصال به دیتابیس...
+                    </div>
+
+                </div>
+
+                <button
+                    id="retryConnectionButton"
+                    class="retry-button"
+                    type="button"
+                >
+                    🔄 تلاش مجدد
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PRODUCT SEARCH
+        ================================================== -->
+
+        <section class="section">
+
+            <div class="card">
+
+                <div class="section-heading">
+
+                    <h2 class="section-title">
+                        🔎 استعلام قیمت
+                    </h2>
+
+                    <p class="section-description">
+                        بارکد محصول را اسکن کنید یا به صورت دستی وارد کنید.
+                    </p>
+
+                </div>
+
+
+                <!-- CAMERA BUTTON -->
+
+                <button
+                    id="startScannerButton"
+                    class="scanner-button"
+                    type="button"
+                >
+                    📷 اسکن بارکد
+                </button>
+
+
+                <!-- SCANNER -->
+
+                <div
+                    id="scannerPanel"
+                    class="scanner-panel"
+                >
+
+                    <div id="reader"></div>
+
+                    <div class="scanner-help">
+                        دوربین را مقابل بارکد قرار دهید.
+                        پس از تشخیص، محصول به صورت خودکار جستجو می‌شود.
+                    </div>
+
+                    <div class="scanner-actions">
+
+                        <button
+                            id="retryScannerButton"
+                            class="btn btn-primary"
+                            type="button"
+                        >
+                            🔄 تلاش مجدد
+                        </button>
+
+                        <button
+                            id="closeScannerButton"
+                            class="btn btn-secondary"
+                            type="button"
+                        >
+                            بستن
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- MANUAL SEARCH -->
+
+                <div class="search-row">
+
+                    <input
+                        id="barcodeInput"
+                        class="barcode-input"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        autocorrect="off"
+                        spellcheck="false"
+                        maxlength="32"
+                        placeholder="بارکد محصول را وارد کنید"
+                    >
+
+                    <button
+                        id="searchButton"
+                        class="search-button"
+                        type="button"
+                    >
+                        🔎
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="searchStatus"
+                    class="status"
+                ></div>
+
+
+                <!-- PRODUCT RESULT -->
+
+                <div
+                    id="productCard"
+                    class="product-card card"
+                >
+
+                    <div class="product-label">
+                        نام کامل کالا
+                    </div>
+
+                    <div
+                        id="productName"
+                        class="product-name"
+                    >
+                        -
+                    </div>
+
+
+                    <div class="price-area">
+
+                        <div class="price-label">
+                            قیمت فعلی
+                        </div>
+
+                        <div
+                            id="currentPrice"
+                            class="current-price"
+                        >
+                            -
+                        </div>
+
+                    </div>
+
+
+                    <div class="code-row">
+
+                        <span class="code-label">
+                            کد کالا
+                        </span>
+
+                        <span
+                            id="productCode"
+                            class="product-code"
+                        >
+                            -
+                        </span>
+
+                    </div>
+
+
+                    <!-- PREVIOUS PRICE -->
+
+                    <div
+                        id="previousPriceBox"
+                        class="previous-price"
+                    >
+                        <strong>
+                            قیمت قبلی:
+                        </strong>
+
+                        <span id="previousPrice">
+                            -
+                        </span>
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    <div class="product-actions">
+
+                        <button
+                            id="editPriceButton"
+                            class="btn btn-primary"
+                            type="button"
+                        >
+                            ✏️ ویرایش قیمت
+                        </button>
+
+                        <button
+                            id="previousPriceButton"
+                            class="btn btn-secondary"
+                            type="button"
+                        >
+                            مشاهده قیمت قبلی
+                        </button>
+
+                    </div>
+
+
+                    <!-- EDIT -->
+
+                    <div
+                        id="editBox"
+                        class="edit-box"
+                    >
+
+                        <label
+                            class="input-label"
+                            for="newPriceInput"
+                        >
+                            قیمت جدید
+                        </label>
+
+                        <input
+                            id="newPriceInput"
+                            class="price-input"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="مثلاً 350000"
+                        >
+
+                        <div class="edit-actions">
+
+                            <button
+                                id="savePriceButton"
+                                class="btn btn-primary"
+                                type="button"
+                            >
+                                💾 ذخیره
+                            </button>
+
+                            <button
+                                id="cancelEditButton"
+                                class="btn btn-secondary"
+                                type="button"
+                            >
+                                لغو
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="technicalError"
+                    class="technical-error"
+                ></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             EXCEL IMPORT
+        ================================================== -->
+
+        <section class="section">
+
+            <div class="card">
+
+                <div class="section-heading">
+
+                    <h2 class="section-title">
+                        📊 ورود اطلاعات از Excel
+                    </h2>
+
+                    <p class="section-description">
+                        فایل Excel محک باید شامل ستون‌های «بارکد»، «نام کامل کالا» و «فروش نقدی» باشد.
+                    </p>
+
+                </div>
+
+
+                <div class="file-picker">
+
+                    <div class="file-button">
+                        📁 انتخاب فایل Excel
+                    </div>
+
+                    <input
+                        id="excelFileInput"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                    >
+
+                </div>
+
+
+                <div class="excel-info">
+
+                    «فروش نقدی» به عنوان قیمت فعلی کالا استفاده می‌شود.
+                    موجودی کالا از Excel خوانده یا ذخیره نمی‌شود.
+
+                </div>
+
+
+                <div
+                    id="excelStatus"
+                    class="status"
+                ></div>
+
+
+                <!-- PREVIEW -->
+
+                <div
+                    id="previewBox"
+                    class="preview"
+                >
+
+                    <div
+                        id="previewSummary"
+                        class="preview-summary"
+                    ></div>
+
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>بارکد</th>
+                                    <th>نام کامل کالا</th>
+                                    <th>فروش نقدی</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody
+                                id="previewTableBody"
+                            ></tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <div class="import-actions">
+
+                        <button
+                            id="cancelImportButton"
+                            class="btn btn-secondary"
+                            type="button"
+                        >
+                            لغو
+                        </button>
+
+                        <button
+                            id="startImportButton"
+                            class="btn btn-primary"
+                            type="button"
+                        >
+                            شروع وارد کردن
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="progressContainer"
+                        class="progress"
+                    >
+
+                        <div class="progress-top">
+
+                            <span id="progressText">
+                                در حال وارد کردن...
+                            </span>
+
+                            <span id="progressCount">
+                                0 / 0
+                            </span>
+
+                        </div>
+
+                        <div class="progress-bar">
+
+                            <div
+                                id="progressFill"
+                                class="progress-fill"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             DEVELOPER TEST
+        ================================================== -->
+
+        <section class="section">
+
+            <details>
+
+                <summary>
+                    🛠 بخش تست و عیب‌یابی
+                </summary>
+
+                <div class="developer-content">
+
+                    <div class="test-row">
+
+                        <input
+                            id="testBarcodeInput"
+                            class="test-input"
+                            type="text"
+                            value="0125"
+                            maxlength="32"
+                        >
+
+                        <button
+                            id="testConnectionButton"
+                            class="btn btn-secondary"
+                            type="button"
+                        >
+                            تست اتصال
+                        </button>
+
+                    </div>
+
+                    <button
+                        id="testProductButton"
+                        class="btn btn-primary"
+                        style="width:100%; margin-top:7px;"
+                        type="button"
+                    >
+                        🔎 تست محصول 0125
+                    </button>
+
+                    <div
+                        id="developerStatus"
+                        class="status"
+                    ></div>
+
+                </div>
+
+            </details>
+
+        </section>
+
+    </main>
+
+
+    <footer class="footer">
+        NEWFACE • Product Price Lookup
+    </footer>
+
+</div>
+
+
+<!-- =========================================================
+     LOADING
+========================================================= -->
+
+<div
+    id="loadingOverlay"
+    class="loading-overlay"
+>
+
+    <div class="loading-card">
+
+        <div class="spinner"></div>
 
         <div
-            id="connection"
-            class="connection">
-
-            <span
-                id="connectionDot"
-                class="connection-dot">
-            </span>
-
-            <span
-                id="connectionText">
-                در حال بررسی...
-            </span>
-
+            id="loadingText"
+            class="loading-text"
+        >
+            در حال پردازش...
         </div>
 
-
     </div>
 
-
-    <!-- SEARCH -->
-
-    <div class="search-box">
-
-
-        <input
-            id="searchInput"
-            class="search-input"
-            type="text"
-            inputmode="text"
-            autocomplete="off"
-            placeholder="کد کالا یا بارکد...">
-
-
-        <button
-            class="search-btn"
-            onclick="searchProduct()">
-
-            🔎
-
-        </button>
-
-
-    </div>
-
-
-</header>
-
-
-<!-- =====================================================
-     CONTENT
-===================================================== -->
-
-<main class="content">
-
-
-<!-- PRODUCT SEARCH -->
-
-<div class="section-title">
-
-    <h2>
-        استعلام محصول
-    </h2>
-
-    <span>
-        بارکدخوان
-    </span>
-
-</div>
-
-
-<div class="card">
-
-
-    <button
-        class="scan-btn"
-        onclick="openScanner()">
-
-        📷 &nbsp;
-        اسکن بارکد محصول
-
-    </button>
-
-
-    <div class="scan-description">
-
-        دوربین را مقابل بارکد محصول قرار دهید
-
-    </div>
-
-
-</div>
-
-
-<!-- PRODUCT -->
-
-<div
-    id="product"
-    class="product">
-
-
-    <div class="product-main">
-
-
-        <div
-            id="productCode"
-            class="code">
-        </div>
-
-
-        <div
-            id="productName"
-            class="product-name">
-        </div>
-
-
-        <div class="price-label">
-            قیمت فعلی
-        </div>
-
-
-        <div class="price">
-
-            <span
-                id="productPrice">
-            </span>
-
-            <span class="toman">
-                تومان
-            </span>
-
-        </div>
-
-
-    </div>
-
-
-    <!-- PREVIOUS PRICE -->
-
-    <div
-        id="previous"
-        class="previous">
-
-        قیمت قبلی:
-
-        <strong
-            id="previousPrice">
-        </strong>
-
-        تومان
-
-    </div>
-
-
-    <!-- EDIT -->
-
-    <div
-        id="edit"
-        class="edit">
-
-
-        <label>
-            قیمت جدید
-        </label>
-
-
-        <input
-            id="newPrice"
-            class="price-input"
-            type="text"
-            inputmode="numeric"
-            placeholder="مثلاً 3500000">
-
-
-        <button
-            class="save-btn"
-            onclick="savePrice()">
-
-            ذخیره قیمت
-
-        </button>
-
-
-    </div>
-
-
-    <!-- ACTIONS -->
-
-    <div class="actions">
-
-
-        <button
-            class="action primary"
-            onclick="toggleEdit()">
-
-            ✎ ویرایش قیمت
-
-        </button>
-
-
-        <button
-            class="action"
-            onclick="togglePrevious()">
-
-            ◷ قیمت قبلی
-
-        </button>
-
-
-    </div>
-
-
-</div>
-
-
-<!-- NOT FOUND -->
-
-<div
-    id="notFound"
-    class="not-found">
-
-
-    <div class="not-found-icon">
-        🔍
-    </div>
-
-
-    <div class="not-found-title">
-        محصول پیدا نشد
-    </div>
-
-
-    <div id="notFoundText">
-        این کد در دیتابیس وجود ندارد.
-    </div>
-
-
-</div>
-
-
-<!-- EXCEL -->
-
-<div class="excel-section">
-
-
-    <div class="section-title">
-
-
-        <h2>
-            بروزرسانی محصولات
-        </h2>
-
-
-        <span>
-            Excel
-        </span>
-
-
-    </div>
-
-
-    <div class="card">
-
-
-        <button
-            class="excel-btn"
-            onclick="document.getElementById('excelFile').click()">
-
-            📊 &nbsp;
-            انتخاب فایل Excel انبار محک
-
-        </button>
-
-
-        <div class="excel-info">
-
-            فایل Excel باید دقیقاً شامل این سه ستون باشد:
-
-            <br>
-
-            <b>بارکد</b>
-            &nbsp; | &nbsp;
-            <b>نام کالا</b>
-            &nbsp; | &nbsp;
-            <b>فروش نقدی</b>
-
-            <br>
-
-            «فروش نقدی» به‌عنوان قیمت محصول ذخیره می‌شود.
-
-        </div>
-
-
-        <input
-            id="excelFile"
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onchange="readExcel(event)">
-
-
-    </div>
-
-
-</div>
-
-
-<!-- IMPORT RESULT -->
-
-<div
-    id="importResult"
-    class="import-result">
-
-
-    <h3>
-        نتیجه بررسی فایل
-    </h3>
-
-
-    <div class="stats">
-
-
-        <div class="stat">
-
-            <span
-                id="totalRows"
-                class="stat-number">
-                0
-            </span>
-
-            <span class="stat-label">
-                کل محصولات
-            </span>
-
-        </div>
-
-
-        <div class="stat">
-
-            <span
-                id="newRows"
-                class="stat-number">
-                0
-            </span>
-
-            <span class="stat-label">
-                محصول جدید
-            </span>
-
-        </div>
-
-
-        <div class="stat">
-
-            <span
-                id="priceChangedRows"
-                class="stat-number">
-                0
-            </span>
-
-            <span class="stat-label">
-                قیمت تغییر کرده
-            </span>
-
-        </div>
-
-
-        <div class="stat">
-
-            <span
-                id="unchangedRows"
-                class="stat-number">
-                0
-            </span>
-
-            <span class="stat-label">
-                بدون تغییر
-            </span>
-
-        </div>
-
-
-    </div>
-
-
-    <div class="import-actions">
-
-
-        <button
-            class="import-action cancel"
-            onclick="cancelImport()">
-
-            لغو
-
-        </button>
-
-
-        <button
-            class="import-action confirm"
-            onclick="applyImport()">
-
-            اعمال اطلاعات
-
-        </button>
-
-
-    </div>
-
-
-</div>
-
-
-</main>
-
-</div>
-
-
-<!-- =====================================================
-     SCANNER
-===================================================== -->
-
-<div
-    id="scannerModal"
-    class="scanner-modal">
-
-
-    <div class="scanner-header">
-
-
-        <strong>
-            اسکن بارکد
-        </strong>
-
-
-        <button
-            class="close-scanner"
-            onclick="closeScanner()">
-
-            ×
-
-        </button>
-
-
-    </div>
-
-
-    <div id="reader"></div>
-
-
-    <div
-        id="cameraError"
-        class="camera-error">
-
-
-        <div class="camera-error-title">
-            دوربین باز نشد
-        </div>
-
-
-        <div
-            id="cameraErrorText"
-            class="camera-error-text">
-
-        </div>
-
-
-        <button
-            class="camera-retry"
-            onclick="retryCamera()">
-
-            تلاش دوباره
-
-        </button>
-
-
-    </div>
-
-
-    <div class="scanner-help">
-
-        بارکد را داخل محدوده دوربین قرار دهید
-
-    </div>
-
-
-</div>
-
-
-<!-- TOAST -->
-
-<div
-    id="toast"
-    class="toast">
 </div>
 
 
 <script>
 
+/* ============================================================
+   SUPABASE CONFIGURATION
+   ============================================================ */
 
-/* =========================================================
-   SUPABASE CONFIG
-   فقط این قسمت را تغییر بده
-========================================================= */
+// ================================
+// SUPABASE CONFIGURATION
+// ================================
+const SUPABASE_URL = "https://vkemkkfrwnrryjjusdzz.supabase.co";
 
-
-/*
-   آدرس پروژه Supabase
-*/
-
-
-/*
-   Publishable key / anon key
-*/
-const SUPABASE_URL =
-    "https://vkemkkfrwnrryjjusdzz.supabase.co";
-
-const SUPABASE_KEY =
-    "sb_publishable_8UpdF44MA0JLIhkQKMhM2A_gC3pNWKE";
+const SUPABASE_ANON_KEY = "sb_publishable_8UpdF44MA0JLIhkQKMhM2A_gC3pNWKE";
 
 
-
-/*
-   نام جدول Supabase
-
-   اگر جدول تو products نیست،
-   فقط همین مقدار را تغییر بده.
-
-   مثال:
-
-   const TABLE_NAME = "product";
-
-*/
-
-const TABLE_NAME =
-    "products";
-
-
-/* =========================================================
+/* ============================================================
    SUPABASE CLIENT
-========================================================= */
+============================================================ */
 
-const db =
-    window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
+let db = null;
+
+try {
+
+    if (
+        typeof supabase !== "undefined" &&
+        SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+        SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY"
+    ) {
+
+        db = supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+        );
+
+    }
+
+} catch (error) {
+
+    console.error(
+        "Supabase initialization error:",
+        error
     );
 
+}
 
-/* =========================================================
-   VARIABLES
-========================================================= */
+
+/* ============================================================
+   GLOBAL STATE
+============================================================ */
+
+let databaseOnline = false;
 
 let currentProduct = null;
 
 let scanner = null;
 
+let scannerRunning = false;
+
 let importedProducts = [];
 
-let scannerStarting = false;
+let importInProgress = false;
+
+let lastDetectedCode = "";
+
+let lastDetectedTime = 0;
+
+const IMPORT_BATCH_SIZE = 500;
 
 
-/* =========================================================
-   CONNECTION TEST
-========================================================= */
+/* ============================================================
+   HELPER
+============================================================ */
 
-async function testConnection(){
+function $(id) {
+    return document.getElementById(id);
+}
 
-    setConnection(
-        "در حال بررسی...",
-        "loading"
+
+/* ============================================================
+   LOADING
+============================================================ */
+
+function showLoading(message) {
+
+    $("loadingText").textContent =
+        message || "در حال پردازش...";
+
+    $("loadingOverlay")
+        .classList
+        .add("show");
+}
+
+
+function hideLoading() {
+
+    $("loadingOverlay")
+        .classList
+        .remove("show");
+}
+
+
+/* ============================================================
+   STATUS
+============================================================ */
+
+function showStatus(
+    id,
+    message,
+    type = "success"
+) {
+
+    const element = $(id);
+
+    element.textContent = message;
+
+    element.className =
+        "status show " + type;
+}
+
+
+function hideStatus(id) {
+
+    const element = $(id);
+
+    element.textContent = "";
+
+    element.className = "status";
+}
+
+
+/* ============================================================
+   TECHNICAL ERROR
+============================================================ */
+
+function showTechnicalError(error) {
+
+    const element =
+        $("technicalError");
+
+    if (!error) {
+
+        element.textContent = "";
+
+        element.classList.remove("show");
+
+        return;
+    }
+
+    let text = "";
+
+    try {
+
+        if (typeof error === "string") {
+
+            text = error;
+
+        } else {
+
+            text = JSON.stringify(
+                {
+                    name: error.name,
+                    message: error.message,
+                    code: error.code,
+                    details: error.details,
+                    hint: error.hint
+                },
+                null,
+                2
+            );
+
+        }
+
+    } catch {
+
+        text = String(error);
+
+    }
+
+    element.textContent = text;
+
+    element.classList.add("show");
+}
+
+
+/* ============================================================
+   SUPABASE CONFIG CHECK
+============================================================ */
+
+function isSupabaseConfigured() {
+
+    return (
+        db !== null &&
+        SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+        SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY"
+    );
+}
+
+
+/* ============================================================
+   SUPABASE ERROR TRANSLATION
+============================================================ */
+
+function supabaseErrorMessage(error) {
+
+    if (!error) {
+
+        return "خطایی در ارتباط با دیتابیس رخ داد.";
+    }
+
+    const message = (
+        String(error.message || "") +
+        " " +
+        String(error.details || "") +
+        " " +
+        String(error.hint || "")
+    ).toLowerCase();
+
+    const code =
+        String(error.code || "");
+
+
+    if (
+        message.includes("schema cache") ||
+        message.includes("could not find the table") ||
+        (
+            message.includes("relation") &&
+            message.includes("does not exist")
+        )
+    ) {
+
+        return (
+            "جدول products در Data API قابل دسترسی نیست. " +
+            "لطفاً مطمئن شوید جدول public.products در Supabase " +
+            "از طریق Data API در دسترس است."
+        );
+
+    }
+
+
+    if (
+        code === "42501" ||
+        message.includes("permission denied") ||
+        message.includes("row-level security") ||
+        message.includes("rls")
+    ) {
+
+        return (
+            "دسترسی این عملیات توسط RLS یا مجوزهای Supabase مسدود شده است."
+        );
+
+    }
+
+
+    if (
+        message.includes("failed to fetch") ||
+        message.includes("network") ||
+        message.includes("fetch")
+    ) {
+
+        return "اتصال به دیتابیس برقرار نشد.";
+
+    }
+
+
+    return "خطایی هنگام ارتباط با دیتابیس رخ داد.";
+}
+
+
+/* ============================================================
+   REAL CONNECTION TEST
+============================================================ */
+
+async function checkConnection(
+    showSearchMessage = false
+) {
+
+    const badge =
+        $("connectionBadge");
+
+    const text =
+        $("connectionText");
+
+    const title =
+        $("connectionTitle");
+
+    const description =
+        $("connectionDescription");
+
+
+    badge.classList.remove(
+        "online",
+        "offline"
     );
 
 
-    try{
+    text.textContent =
+        "بررسی...";
 
-        /*
-           فقط یک رکورد می‌خوانیم.
-           هدف فقط تست اتصال و وجود جدول است.
-        */
 
-        const result =
-            await db
-            .from(TABLE_NAME)
+    title.textContent =
+        "وضعیت اتصال";
+
+
+    description.textContent =
+        "در حال بررسی اتصال به دیتابیس...";
+
+
+    if (!isSupabaseConfigured()) {
+
+        databaseOnline = false;
+
+        badge.classList.add("offline");
+
+        text.textContent =
+            "آفلاین";
+
+        title.textContent =
+            "🔴 اتصال به دیتابیس برقرار نیست";
+
+        description.textContent =
+            "تنظیمات Supabase وارد نشده است.";
+
+        if (showSearchMessage) {
+
+            showStatus(
+                "searchStatus",
+                "لطفاً SUPABASE_URL و SUPABASE_ANON_KEY را تنظیم کنید.",
+                "error"
+            );
+        }
+
+        return false;
+    }
+
+
+    try {
+
+        const {
+            error
+        } = await db
+            .from("products")
             .select("code")
             .limit(1);
 
 
-        if(result.error){
-
-            console.error(
-                "SUPABASE ERROR:",
-                result.error
-            );
-
-
-            setConnection(
-                "خطای دیتابیس",
-                "error"
-            );
-
-
-            /*
-               نمایش خطای دقیق
-            */
-
-            showToast(
-                "Supabase: " +
-                result.error.message
-            );
-
-
-            return false;
+        if (error) {
+            throw error;
         }
 
 
-        setConnection(
-            "متصل",
-            "connected"
-        );
+        databaseOnline = true;
 
+        badge.classList.add("online");
+
+        text.textContent =
+            "آنلاین";
+
+        title.textContent =
+            "🟢 اتصال به دیتابیس برقرار است";
+
+        description.textContent =
+            "دیتابیس آماده استفاده است.";
 
         return true;
 
 
-    }catch(error){
+    } catch (error) {
 
-        console.error(error);
-
-
-        setConnection(
-            "قطع",
-            "error"
+        console.error(
+            "Connection error:",
+            error
         );
 
 
-        showToast(
-            "خطا در اتصال به دیتابیس"
-        );
+        databaseOnline = false;
 
+        badge.classList.add("offline");
+
+        text.textContent =
+            "آفلاین";
+
+        title.textContent =
+            "🔴 اتصال به دیتابیس برقرار نیست";
+
+        description.textContent =
+            supabaseErrorMessage(error);
+
+
+        if (showSearchMessage) {
+
+            showStatus(
+                "searchStatus",
+                supabaseErrorMessage(error),
+                "error"
+            );
+
+            showTechnicalError(error);
+        }
 
         return false;
     }
 }
 
 
-/* =========================================================
-   CONNECTION UI
-========================================================= */
+/* ============================================================
+   ENSURE CONNECTION
+============================================================ */
 
-function setConnection(
-    text,
-    state
-){
+async function ensureConnection() {
 
-    const box =
-        document
-        .getElementById(
-            "connection"
-        );
+    /*
+     * Always perform a real request before important operations.
+     */
 
-
-    const textElement =
-        document
-        .getElementById(
-            "connectionText"
-        );
-
-
-    textElement.innerText =
-        text;
-
-
-    box.classList.remove(
-        "connected",
-        "error"
-    );
-
-
-    if(state === "connected"){
-
-        box.classList.add(
-            "connected"
-        );
-
-    }
-
-
-    if(state === "error"){
-
-        box.classList.add(
-            "error"
-        );
-
-    }
-
+    return await checkConnection(false);
 }
 
 
-/* =========================================================
-   SEARCH PRODUCT
-========================================================= */
+/* ============================================================
+   BARCODE
+============================================================ */
 
-async function searchProduct(){
+function normalizeBarcode(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    /*
+     * NEVER use Number() here.
+     *
+     * Barcode is always a string.
+     */
 
     let code =
-        document
-        .getElementById(
-            "searchInput"
-        )
-        .value
-        .trim();
-
-
-    if(!code){
-
-        showToast(
-            "کد کالا را وارد کنید."
-        );
-
-        return;
-    }
+        String(value).trim();
 
 
     /*
-       کد را String نگه می‌داریم
-       تا صفرهای اول مثل 0125
-       حذف نشوند.
-    */
+     * Handle Excel values such as 125.0
+     * without converting barcode to Number.
+     */
+
+    if (
+        /^\d+\.0+$/.test(code)
+    ) {
+
+        code =
+            code.substring(
+                0,
+                code.indexOf(".")
+            );
+    }
+
+
+    return code;
+}
+
+
+function isValidBarcode(code) {
 
     code =
-        String(code);
+        normalizeBarcode(code);
+
+    return /^\d{1,32}$/.test(code);
+}
 
 
-    showToast(
-        "در حال جستجو..."
+/* ============================================================
+   PRICE
+============================================================ */
+
+function normalizePrice(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return null;
+    }
+
+    let text =
+        String(value).trim();
+
+
+    if (!text) {
+        return null;
+    }
+
+
+    const persian =
+        "۰۱۲۳۴۵۶۷۸۹";
+
+    const arabic =
+        "٠١٢٣٤٥٦٧٨٩";
+
+
+    text =
+        text.replace(
+            /[۰-۹]/g,
+            char =>
+                String(
+                    persian.indexOf(char)
+                )
+        );
+
+
+    text =
+        text.replace(
+            /[٠-٩]/g,
+            char =>
+                String(
+                    arabic.indexOf(char)
+                )
+        );
+
+
+    text =
+        text
+            .replace(/,/g, "")
+            .replace(/٬/g, "")
+            .replace(/\s/g, "")
+            .replace(/تومان/g, "")
+            .replace(/ریال/g, "");
+
+
+    if (!/^\d+$/.test(text)) {
+        return null;
+    }
+
+
+    const number =
+        Number(text);
+
+
+    if (
+        !Number.isSafeInteger(number) ||
+        number < 0
+    ) {
+
+        return null;
+    }
+
+
+    return number;
+}
+
+
+function formatPrice(value) {
+
+    const number =
+        Number(value);
+
+
+    if (!Number.isFinite(number)) {
+        return "-";
+    }
+
+
+    return (
+        new Intl.NumberFormat(
+            "en-US"
+        ).format(number)
+        + " تومان"
+    );
+}
+
+
+/* ============================================================
+   SEARCH PRODUCT
+============================================================ */
+
+async function searchProduct(
+    suppliedCode = null
+) {
+
+    showTechnicalError(null);
+
+
+    let code;
+
+
+    if (
+        suppliedCode !== null
+    ) {
+
+        code =
+            normalizeBarcode(
+                suppliedCode
+            );
+
+    } else {
+
+        code =
+            normalizeBarcode(
+                $("barcodeInput").value
+            );
+    }
+
+
+    $("barcodeInput").value =
+        code;
+
+
+    if (!code) {
+
+        hideProduct();
+
+        showStatus(
+            "searchStatus",
+            "لطفاً بارکد محصول را وارد کنید.",
+            "warning"
+        );
+
+        return;
+    }
+
+
+    if (!isValidBarcode(code)) {
+
+        hideProduct();
+
+        showStatus(
+            "searchStatus",
+            "بارکد معتبر نیست.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    const online =
+        await ensureConnection();
+
+
+    if (!online) {
+
+        showStatus(
+            "searchStatus",
+            "🔴 دیتابیس در دسترس نیست.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    showStatus(
+        "searchStatus",
+        "در حال جستجو...",
+        "warning"
     );
 
 
-    const result =
-        await db
-        .from(TABLE_NAME)
-        .select(
-            "code,name,price,previous_price"
-        )
-        .eq(
-            "code",
-            code
-        )
-        .maybeSingle();
+    $("searchButton").disabled =
+        true;
 
 
-    if(result.error){
+    try {
+
+        /*
+         * code remains STRING.
+         */
+
+        const {
+            data,
+            error
+        } = await db
+            .from("products")
+            .select("*")
+            .eq("code", code)
+            .maybeSingle();
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        if (!data) {
+
+            hideProduct();
+
+            showStatus(
+                "searchStatus",
+                "محصولی با این بارکد در دیتابیس وجود ندارد.",
+                "warning"
+            );
+
+            return;
+        }
+
+
+        currentProduct = {
+
+            code:
+                normalizeBarcode(
+                    data.code
+                ),
+
+            name:
+                data.name || "",
+
+            price:
+                data.price,
+
+            previous_price:
+                data.previous_price
+        };
+
+
+        renderProduct(
+            currentProduct
+        );
+
+
+        showStatus(
+            "searchStatus",
+            "محصول پیدا شد.",
+            "success"
+        );
+
+
+    } catch (error) {
 
         console.error(
-            result.error
+            "Search error:",
+            error
         );
 
 
-        showNotFound(
-            "خطای Supabase: " +
-            result.error.message
-        );
+        hideProduct();
 
 
-        setConnection(
-            "خطای دیتابیس",
+        showStatus(
+            "searchStatus",
+            supabaseErrorMessage(error),
             "error"
         );
 
 
-        return;
+        showTechnicalError(error);
+
+
+    } finally {
+
+        $("searchButton").disabled =
+            false;
     }
-
-
-    if(!result.data){
-
-        showNotFound(
-            "این کد در دیتابیس وجود ندارد."
-        );
-
-
-        return;
-    }
-
-
-    setConnection(
-        "متصل",
-        "connected"
-    );
-
-
-    showProduct(
-        result.data
-    );
-
 }
 
 
-/* =========================================================
-   SHOW PRODUCT
-========================================================= */
+/* ============================================================
+   RENDER PRODUCT
+============================================================ */
 
-function showProduct(product){
+function renderProduct(product) {
 
-    currentProduct =
-        product;
-
-
-    document
-    .getElementById(
-        "notFound"
-    )
-    .style.display =
-    "none";
+    $("productName").textContent =
+        product.name ||
+        "بدون نام";
 
 
-    document
-    .getElementById(
-        "product"
-    )
-    .style.display =
-    "block";
-
-
-    document
-    .getElementById(
-        "productCode"
-    )
-    .innerText =
-        "کد: " +
-        product.code;
-
-
-    document
-    .getElementById(
-        "productName"
-    )
-    .innerText =
-        product.name;
-
-
-    document
-    .getElementById(
-        "productPrice"
-    )
-    .innerText =
+    $("currentPrice").textContent =
         formatPrice(
             product.price
         );
 
 
-    document
-    .getElementById(
-        "previousPrice"
-    )
-    .innerText =
-        product.previous_price == null
-        ? "ثبت نشده"
-        : formatPrice(
-            product.previous_price
-        );
+    $("productCode").textContent =
+        product.code;
 
 
-    document
-    .getElementById(
-        "previous"
-    )
-    .style.display =
-    "none";
+    if (
+        product.previous_price !== null &&
+        product.previous_price !== undefined
+    ) {
 
+        $("previousPrice").textContent =
+            formatPrice(
+                product.previous_price
+            );
 
-    document
-    .getElementById(
-        "edit"
-    )
-    .style.display =
-    "none";
+    } else {
 
-}
-
-
-/* =========================================================
-   SHOW NOT FOUND
-========================================================= */
-
-function showNotFound(message){
-
-    currentProduct = null;
-
-
-    document
-    .getElementById(
-        "product"
-    )
-    .style.display =
-    "none";
-
-
-    document
-    .getElementById(
-        "notFound"
-    )
-    .style.display =
-    "block";
-
-
-    document
-    .getElementById(
-        "notFoundText"
-    )
-    .innerText =
-        message ||
-        "این کد در دیتابیس وجود ندارد.";
-
-}
-
-
-/* =========================================================
-   FORMAT PRICE
-========================================================= */
-
-function formatPrice(value){
-
-    if(
-        value === null ||
-        value === undefined ||
-        value === ""
-    ){
-
-        return "-";
-
+        $("previousPrice").textContent =
+            "قیمت قبلی ثبت نشده است.";
     }
-
-
-    return Number(
-        value
-    ).toLocaleString(
-        "en-US"
-    );
-
-}
-
-
-/* =========================================================
-   EDIT
-========================================================= */
-
-function toggleEdit(){
-
-    if(!currentProduct)
-        return;
-
-
-    const box =
-        document
-        .getElementById(
-            "edit"
-        );
-
-
-    if(
-        box.style.display ===
-        "block"
-    ){
-
-        box.style.display =
-        "none";
-
-        return;
-    }
-
-
-    box.style.display =
-    "block";
-
-
-    document
-    .getElementById(
-        "newPrice"
-    )
-    .value =
-        currentProduct.price == null
-        ? ""
-        : formatPrice(
-            currentProduct.price
-        );
-
-}
-
-
-/* =========================================================
-   PREVIOUS PRICE
-========================================================= */
-
-function togglePrevious(){
-
-    if(!currentProduct)
-        return;
-
-
-    const box =
-        document
-        .getElementById(
-            "previous"
-        );
-
-
-    box.style.display =
-        box.style.display ===
-        "block"
-        ? "none"
-        : "block";
-
-}
-
-
-/* =========================================================
-   SAVE PRICE
-========================================================= */
-
-async function savePrice(){
-
-    if(!currentProduct)
-        return;
-
-
-    let value =
-        document
-        .getElementById(
-            "newPrice"
-        )
-        .value
-        .replace(
-            /,/g,
-            ""
-        )
-        .replace(
-            /[^\d]/g,
-            ""
-        );
-
-
-    const newPrice =
-        Number(value);
-
-
-    if(
-        !newPrice ||
-        newPrice <= 0
-    ){
-
-        showToast(
-            "قیمت صحیح وارد کنید."
-        );
-
-        return;
-    }
-
-
-    const oldPrice =
-        currentProduct.price;
-
-
-    showToast(
-        "در حال ذخیره..."
-    );
-
-
-    const result =
-        await db
-        .from(TABLE_NAME)
-        .update({
-
-            price:
-                newPrice,
-
-            previous_price:
-                oldPrice
-
-        })
-        .eq(
-            "code",
-            currentProduct.code
-        );
-
-
-    if(result.error){
-
-        console.error(
-            result.error
-        );
-
-
-        showToast(
-            "خطای ذخیره: " +
-            result.error.message
-        );
-
-
-        return;
-    }
-
-
-    currentProduct.price =
-        newPrice;
-
-
-    currentProduct.previous_price =
-        oldPrice;
-
-
-    showProduct(
-        currentProduct
-    );
-
-
-    showToast(
-        "قیمت با موفقیت ذخیره شد."
-    );
-
-}
-
-
-/* =========================================================
-   OPEN SCANNER
-========================================================= */
-
-async function openScanner(){
-
-    if(scannerStarting)
-        return;
-
-
-    scannerStarting =
-        true;
-
-
-    document
-    .getElementById(
-        "scannerModal"
-    )
-    .style.display =
-    "block";
-
-
-    document
-    .getElementById(
-        "cameraError"
-    )
-    .style.display =
-    "none";
 
 
     /*
-       اول بررسی می‌کنیم
-       مرورگر اصلاً getUserMedia
-       دارد یا نه.
-    */
+     * Previous price hidden by default.
+     */
 
-    if(
-        !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia
-    ){
+    $("previousPriceBox")
+        .classList
+        .remove("show");
 
-        showCameraError(
-            "مرورگر این دستگاه دسترسی مستقیم به دوربین را پشتیبانی نمی‌کند."
+
+    $("previousPriceButton")
+        .textContent =
+        "مشاهده قیمت قبلی";
+
+
+    $("editBox")
+        .classList
+        .remove("show");
+
+
+    $("newPriceInput").value =
+        "";
+
+
+    $("productCard")
+        .classList
+        .add("show");
+}
+
+
+function hideProduct() {
+
+    currentProduct =
+        null;
+
+
+    $("productCard")
+        .classList
+        .remove("show");
+
+
+    $("editBox")
+        .classList
+        .remove("show");
+
+
+    $("previousPriceBox")
+        .classList
+        .remove("show");
+}
+
+
+/* ============================================================
+   EDIT PRICE
+============================================================ */
+
+function openPriceEditor() {
+
+    if (!currentProduct) {
+        return;
+    }
+
+
+    $("newPriceInput").value =
+        String(
+            currentProduct.price ?? ""
         );
 
 
-        scannerStarting =
-        false;
+    $("editBox")
+        .classList
+        .add("show");
 
+
+    setTimeout(
+        () => {
+            $("newPriceInput").focus();
+        },
+        100
+    );
+}
+
+
+function closePriceEditor() {
+
+    $("editBox")
+        .classList
+        .remove("show");
+
+
+    $("newPriceInput").value =
+        "";
+}
+
+
+async function savePrice() {
+
+    if (!currentProduct) {
+        return;
+    }
+
+
+    const newPrice =
+        normalizePrice(
+            $("newPriceInput").value
+        );
+
+
+    if (newPrice === null) {
+
+        showStatus(
+            "searchStatus",
+            "قیمت جدید معتبر نیست.",
+            "error"
+        );
 
         return;
     }
 
 
-    try{
+    const online =
+        await ensureConnection();
+
+
+    if (!online) {
+
+        showStatus(
+            "searchStatus",
+            "🔴 دیتابیس در دسترس نیست. قیمت ذخیره نشد.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    $("savePriceButton").disabled =
+        true;
+
+
+    showStatus(
+        "searchStatus",
+        "در حال ذخیره قیمت...",
+        "warning"
+    );
+
+
+    try {
 
         /*
-           یک بار درخواست دسترسی
-           به دوربین می‌کنیم.
+         * Read current price directly from DB.
+         */
 
-           این کار باعث می‌شود
-           permission مرورگر مشخص شود.
-        */
+        const {
+            data: freshProduct,
+            error: readError
+        } = await db
+            .from("products")
+            .select(
+                "code, price, previous_price"
+            )
+            .eq(
+                "code",
+                currentProduct.code
+            )
+            .maybeSingle();
 
-        const stream =
-            await navigator.mediaDevices
-            .getUserMedia({
 
-                video:{
-                    facingMode:{
-                        ideal:"environment"
-                    }
-                },
+        if (readError) {
+            throw readError;
+        }
 
-                audio:false
 
-            });
+        if (!freshProduct) {
+
+            showStatus(
+                "searchStatus",
+                "محصول در دیتابیس پیدا نشد.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const oldPrice =
+            normalizePrice(
+                freshProduct.price
+            );
 
 
         /*
-           فقط برای تست permission بود.
-           بلافاصله stream را می‌بندیم.
-        */
+         * No price change:
+         * previous_price remains untouched.
+         */
 
-        stream
-        .getTracks()
-        .forEach(
-            track =>
-            track.stop()
+        if (newPrice === oldPrice) {
+
+            closePriceEditor();
+
+            showStatus(
+                "searchStatus",
+                "قیمت تغییری نکرد.",
+                "warning"
+            );
+
+            return;
+        }
+
+
+        /*
+         * Update:
+         *
+         * price = new price
+         * previous_price = old current price
+         */
+
+        const {
+            data,
+            error
+        } = await db
+            .from("products")
+            .update({
+                price: newPrice,
+                previous_price: oldPrice
+            })
+            .eq(
+                "code",
+                currentProduct.code
+            )
+            .select("*")
+            .maybeSingle();
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        if (!data) {
+
+            throw new Error(
+                "UPDATE returned no row."
+            );
+        }
+
+
+        currentProduct = {
+
+            code:
+                normalizeBarcode(
+                    data.code
+                ),
+
+            name:
+                data.name || "",
+
+            price:
+                data.price,
+
+            previous_price:
+                data.previous_price
+        };
+
+
+        renderProduct(
+            currentProduct
         );
 
 
-    }catch(error){
+        showStatus(
+            "searchStatus",
+            "قیمت با موفقیت به‌روزرسانی شد.",
+            "success"
+        );
+
+
+    } catch (error) {
 
         console.error(
-            "CAMERA PERMISSION ERROR:",
+            "Price update error:",
             error
         );
 
 
-        showCameraError(
-            cameraErrorMessage(
-                error
-            )
+        showStatus(
+            "searchStatus",
+            "قیمت ذخیره نشد. " +
+            supabaseErrorMessage(error),
+            "error"
         );
 
 
-        scannerStarting =
-        false;
+        showTechnicalError(error);
 
+
+    } finally {
+
+        $("savePriceButton").disabled =
+            false;
+    }
+}
+
+
+/* ============================================================
+   PREVIOUS PRICE
+============================================================ */
+
+function togglePreviousPrice() {
+
+    const box =
+        $("previousPriceBox");
+
+    const button =
+        $("previousPriceButton");
+
+
+    if (
+        box.classList.contains("show")
+    ) {
+
+        box.classList.remove("show");
+
+        button.textContent =
+            "مشاهده قیمت قبلی";
+
+    } else {
+
+        box.classList.add("show");
+
+        button.textContent =
+            "مخفی کردن قیمت قبلی";
+    }
+}
+
+
+/* ============================================================
+   CAMERA ENVIRONMENT
+============================================================ */
+
+function cameraEnvironment() {
+
+    if (!window.isSecureContext) {
+
+        return {
+            ok: false,
+            message:
+                "دسترسی به دوربین نیازمند HTTPS است. این صفحه را از آدرس HTTPS گیت‌هاب پیجز باز کنید."
+        };
+    }
+
+
+    if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+    ) {
+
+        return {
+            ok: false,
+            message:
+                "مرورگر فعلی از دسترسی استاندارد به دوربین پشتیبانی نمی‌کند."
+        };
+    }
+
+
+    if (
+        typeof Html5Qrcode ===
+        "undefined"
+    ) {
+
+        return {
+            ok: false,
+            message:
+                "کتابخانه اسکن بارکد بارگذاری نشده است. اتصال اینترنت را بررسی کنید."
+        };
+    }
+
+
+    return {
+        ok: true
+    };
+}
+
+
+/* ============================================================
+   CAMERA ERROR
+============================================================ */
+
+function cameraErrorMessage(error) {
+
+    const name =
+        error?.name ||
+        error?.type ||
+        "";
+
+
+    switch (name) {
+
+        case "NotAllowedError":
+        case "PermissionDeniedError":
+
+            return (
+                "اجازه دسترسی به دوربین داده نشده است."
+            );
+
+
+        case "NotFoundError":
+        case "DevicesNotFoundError":
+
+            return (
+                "دوربینی در دستگاه پیدا نشد."
+            );
+
+
+        case "NotReadableError":
+        case "TrackStartError":
+
+            return (
+                "دوربین توسط برنامه دیگری در حال استفاده است یا امکان خواندن تصویر وجود ندارد."
+            );
+
+
+        case "SecurityError":
+
+            return (
+                "دسترسی به دوربین به دلایل امنیتی مسدود شده است. صفحه را با HTTPS باز کنید."
+            );
+
+
+        case "OverconstrainedError":
+
+            return (
+                "دوربین انتخاب‌شده با تنظیمات مورد نیاز سازگار نیست."
+            );
+
+
+        case "AbortError":
+
+            return (
+                "فعال‌سازی دوربین متوقف شد."
+            );
+
+
+        case "TypeError":
+
+            return (
+                "مرورگر یا دستگاه از قابلیت مورد نیاز دوربین پشتیبانی نمی‌کند."
+            );
+
+
+        default:
+
+            return (
+                "خطا در دسترسی به دوربین" +
+                (
+                    name
+                        ? " | نوع خطا: " + name
+                        : ""
+                )
+            );
+    }
+}
+
+
+/* ============================================================
+   START SCANNER
+============================================================ */
+
+async function startScanner() {
+
+    showTechnicalError(null);
+
+
+    const environment =
+        cameraEnvironment();
+
+
+    if (!environment.ok) {
+
+        showStatus(
+            "searchStatus",
+            environment.message,
+            "error"
+        );
 
         return;
     }
 
 
-    /*
-       حالا Scanner را اجرا می‌کنیم.
-    */
+    $("scannerPanel")
+        .classList
+        .add("show");
 
-    try{
+
+    if (scannerRunning) {
+        return;
+    }
+
+
+    $("startScannerButton").disabled =
+        true;
+
+
+    try {
+
+        /*
+         * Create scanner.
+         */
 
         scanner =
             new Html5Qrcode(
@@ -2500,464 +2919,392 @@ async function openScanner(){
             );
 
 
-        const config = {
+        let formats = [];
 
-            fps:10,
 
-            qrbox:{
-                width:300,
-                height:140
-            },
+        if (
+            typeof
+            Html5QrcodeSupportedFormats
+            !== "undefined"
+        ) {
 
-            aspectRatio:
-                window.innerWidth /
-                window.innerHeight,
-
-            formatsToSupport:[
+            formats = [
 
                 Html5QrcodeSupportedFormats.CODE_128,
 
                 Html5QrcodeSupportedFormats.CODE_39,
 
-                Html5QrcodeSupportedFormats.CODE_93,
-
                 Html5QrcodeSupportedFormats.EAN_13,
 
                 Html5QrcodeSupportedFormats.EAN_8,
 
-                Html5QrcodeSupportedFormats.ITF,
-
                 Html5QrcodeSupportedFormats.UPC_A,
 
-                Html5QrcodeSupportedFormats.UPC_E
+                Html5QrcodeSupportedFormats.UPC_E,
 
-            ]
+                Html5QrcodeSupportedFormats.ITF
+            ];
+        }
 
+
+        const config = {
+
+            fps: 10,
+
+            qrbox:
+                function(
+                    width,
+                    height
+                ) {
+
+                    return {
+
+                        width:
+                            Math.max(
+                                Math.min(
+                                    width * 0.86,
+                                    500
+                                ),
+                                220
+                            ),
+
+                        height:
+                            Math.max(
+                                Math.min(
+                                    height * 0.28,
+                                    160
+                                ),
+                                90
+                            )
+                    };
+                },
+
+            aspectRatio:
+                1.777778
         };
 
 
-        /*
-           تلاش اول:
-           دوربین پشت
-        */
+        if (formats.length) {
+
+            config.formatsToSupport =
+                formats;
+        }
+
 
         await scanner.start(
 
             {
-                facingMode:{
-                    ideal:"environment"
-                }
+                facingMode:
+                    "environment"
             },
 
             config,
 
-            onBarcodeSuccess,
+            onBarcodeDetected,
 
-            function(){}
-
+            function() {
+                /*
+                 * Normal scan-frame failure.
+                 * Do not show as camera error.
+                 */
+            }
         );
 
 
-        scannerStarting =
-        false;
+        scannerRunning =
+            true;
 
 
-    }catch(firstError){
+    } catch (error) {
 
         console.error(
-            "FIRST CAMERA START ERROR:",
-            firstError
+            "Scanner error:",
+            error
         );
 
 
-        /*
-           اگر روش اول جواب نداد،
-           دوربین‌های دستگاه را
-           پیدا می‌کنیم.
-        */
-
-        try{
-
-            const cameras =
-                await Html5Qrcode
-                .getCameras();
-
-
-            if(
-                !cameras ||
-                cameras.length === 0
-            ){
-
-                throw new Error(
-                    "هیچ دوربینی توسط مرورگر شناسایی نشد."
-                );
-
-            }
-
-
-            /*
-               اول دوربین‌هایی که
-               اسمشان back/rear دارد.
-            */
-
-            let selectedCamera =
-                cameras.find(
-                    camera =>
-                    /back|rear|environment/i
-                    .test(
-                        camera.label
-                    )
-                );
-
-
-            /*
-               اگر پیدا نشد،
-               آخرین دوربین را امتحان می‌کنیم.
-            */
-
-            if(!selectedCamera){
-
-                selectedCamera =
-                    cameras[
-                        cameras.length - 1
-                    ];
-
-            }
-
-
-            const config = {
-
-                fps:10,
-
-                qrbox:{
-                    width:300,
-                    height:140
-                },
-
-                formatsToSupport:[
-
-                    Html5QrcodeSupportedFormats.CODE_128,
-
-                    Html5QrcodeSupportedFormats.CODE_39,
-
-                    Html5QrcodeSupportedFormats.CODE_93,
-
-                    Html5QrcodeSupportedFormats.EAN_13,
-
-                    Html5QrcodeSupportedFormats.EAN_8,
-
-                    Html5QrcodeSupportedFormats.ITF,
-
-                    Html5QrcodeSupportedFormats.UPC_A,
-
-                    Html5QrcodeSupportedFormats.UPC_E
-
-                ]
-
-            };
-
-
-            await scanner.start(
-
-                selectedCamera.id,
-
-                config,
-
-                onBarcodeSuccess,
-
-                function(){}
-
-            );
-
-
-            scannerStarting =
+        scannerRunning =
             false;
 
 
-        }catch(secondError){
-
-            console.error(
-                "SECOND CAMERA START ERROR:",
-                secondError
-            );
-
-
-            showCameraError(
-                cameraErrorMessage(
-                    secondError
-                )
-            );
+        showStatus(
+            "searchStatus",
+            cameraErrorMessage(error),
+            "error"
+        );
 
 
-            scannerStarting =
+        showTechnicalError(error);
+
+
+    } finally {
+
+        $("startScannerButton").disabled =
             false;
-
-        }
-
     }
-
 }
 
 
-/* =========================================================
-   CAMERA ERROR MESSAGE
-========================================================= */
+/* ============================================================
+   BARCODE DETECTED
+============================================================ */
 
-function cameraErrorMessage(
-    error
-){
-
-    const name =
-        error &&
-        error.name
-        ? error.name
-        : "";
-
-
-    const message =
-        error &&
-        error.message
-        ? error.message
-        : "";
-
-
-    if(
-        name ===
-        "NotAllowedError"
-    ){
-
-        return `
-        اجازه استفاده از دوربین رد شده است.<br><br>
-        از تنظیمات مرورگر، دسترسی Camera
-        برای این سایت را روی Allow قرار دهید.
-        `;
-
-    }
-
-
-    if(
-        name ===
-        "NotFoundError"
-    ){
-
-        return `
-        هیچ دوربین قابل استفاده‌ای پیدا نشد.
-        `;
-
-    }
-
-
-    if(
-        name ===
-        "NotReadableError"
-    ){
-
-        return `
-        دوربین توسط برنامه دیگری در حال استفاده است.
-        برنامه‌هایی که از دوربین استفاده می‌کنند را ببندید و دوباره امتحان کنید.
-        `;
-
-    }
-
-
-    if(
-        name ===
-        "SecurityError"
-    ){
-
-        return `
-        مرورگر دسترسی دوربین را به دلیل تنظیمات امنیتی مسدود کرده است.
-        مطمئن شوید صفحه با HTTPS باز شده است.
-        `;
-
-    }
-
-
-    if(
-        name ===
-        "OverconstrainedError"
-    ){
-
-        return `
-        تنظیمات دوربین انتخاب‌شده توسط دستگاه پشتیبانی نمی‌شود.
-        `;
-
-    }
-
-
-    return `
-        خطای دوربین:<br>
-        ${message || "دوربین راه‌اندازی نشد."}
-        <br><br>
-        کد خطا:
-        ${name || "Unknown"}
-    `;
-
-}
-
-
-/* =========================================================
-   SHOW CAMERA ERROR
-========================================================= */
-
-function showCameraError(
-    message
-){
-
-    document
-    .getElementById(
-        "cameraErrorText"
-    )
-    .innerHTML =
-        message;
-
-
-    document
-    .getElementById(
-        "cameraError"
-    )
-    .style.display =
-    "block";
-
-}
-
-
-/* =========================================================
-   RETRY CAMERA
-========================================================= */
-
-async function retryCamera(){
-
-    await closeScanner();
-
-    await new Promise(
-        resolve =>
-        setTimeout(
-            resolve,
-            300
-        )
-    );
-
-    openScanner();
-
-}
-
-
-/* =========================================================
-   BARCODE SUCCESS
-========================================================= */
-
-async function onBarcodeSuccess(
+async function onBarcodeDetected(
     decodedText
-){
+) {
 
     const code =
-        String(
+        normalizeBarcode(
             decodedText
-        ).trim();
+        );
 
 
-    if(!code)
+    if (!isValidBarcode(code)) {
         return;
-
-
-    await closeScanner();
-
-
-    document
-    .getElementById(
-        "searchInput"
-    )
-    .value =
-    code;
-
-
-    searchProduct();
-
-}
-
-
-/* =========================================================
-   CLOSE SCANNER
-========================================================= */
-
-async function closeScanner(){
-
-    if(scanner){
-
-        try{
-
-            await scanner.stop();
-
-        }catch(error){
-
-            console.log(
-                error
-            );
-
-        }
-
-
-        try{
-
-            await scanner.clear();
-
-        }catch(error){
-
-            console.log(
-                error
-            );
-
-        }
-
-
-        scanner = null;
-
     }
 
 
-    document
-    .getElementById(
-        "scannerModal"
-    )
-    .style.display =
-    "none";
+    const now =
+        Date.now();
 
 
-    document
-    .getElementById(
-        "cameraError"
-    )
-    .style.display =
-    "none";
+    if (
+        code === lastDetectedCode &&
+        now - lastDetectedTime < 1500
+    ) {
+
+        return;
+    }
 
 
-    scannerStarting =
-    false;
+    lastDetectedCode =
+        code;
 
+    lastDetectedTime =
+        now;
+
+
+    $("barcodeInput").value =
+        code;
+
+
+    await stopScanner();
+
+
+    await searchProduct(
+        code
+    );
 }
 
 
-/* =========================================================
-   EXCEL READER
-========================================================= */
+/* ============================================================
+   STOP SCANNER
+============================================================ */
 
-async function readExcel(event){
+async function stopScanner() {
 
-    const file =
-        event.target.files[0];
+    if (
+        !scanner ||
+        !scannerRunning
+    ) {
 
-
-    if(!file)
         return;
+    }
 
 
-    showToast(
-        "در حال خواندن Excel..."
+    try {
+
+        await scanner.stop();
+
+    } catch (error) {
+
+        console.error(
+            "Scanner stop error:",
+            error
+        );
+
+    } finally {
+
+        scannerRunning =
+            false;
+    }
+}
+
+
+/* ============================================================
+   CLOSE SCANNER
+============================================================ */
+
+async function closeScanner() {
+
+    await stopScanner();
+
+
+    $("scannerPanel")
+        .classList
+        .remove("show");
+
+
+    try {
+
+        $("reader").innerHTML =
+            "";
+
+    } catch {}
+
+
+    scanner =
+        null;
+}
+
+
+/* ============================================================
+   EXCEL HEADER NORMALIZATION
+============================================================ */
+
+function normalizeHeader(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+
+        return "";
+    }
+
+
+    return String(value)
+
+        .replace(
+            /\u200c/g,
+            ""
+        )
+
+        .replace(
+            /\u200f/g,
+            ""
+        )
+
+        .replace(
+            /\u200e/g,
+            ""
+        )
+
+        .replace(
+            /\uFEFF/g,
+            ""
+        )
+
+        .replace(
+            /\s+/g,
+            ""
+        )
+
+        .trim();
+}
+
+
+/* ============================================================
+   FIND EXCEL COLUMNS
+============================================================ */
+
+function findExcelColumns(
+    headerRow
+) {
+
+    const headers =
+        headerRow.map(
+            normalizeHeader
+        );
+
+
+    function find(
+        expected
+    ) {
+
+        const target =
+            normalizeHeader(
+                expected
+            );
+
+
+        return headers.findIndex(
+            header =>
+                header === target
+        );
+    }
+
+
+    return {
+
+        barcode:
+            find("بارکد"),
+
+        name:
+            find("نام کامل کالا"),
+
+        price:
+            find("فروش نقدی")
+    };
+}
+
+
+/* ============================================================
+   EXCEL FILE
+============================================================ */
+
+$("excelFileInput")
+    .addEventListener(
+        "change",
+        handleExcelFile
     );
 
 
-    try{
+async function handleExcelFile(
+    event
+ ){
+
+    const file =
+        event.target.files?.[0];
+
+
+    if (!file) {
+        return;
+    }
+
+
+    importedProducts = [];
+
+
+    hideStatus(
+        "excelStatus"
+    );
+
+
+    $("previewBox")
+        .classList
+        .remove("show");
+
+
+    showLoading(
+        "در حال خواندن فایل..."
+    );
+
+
+    try {
+
+        if (
+            typeof XLSX ===
+            "undefined"
+        ) {
+
+            throw new Error(
+                "SheetJS is not available."
+            );
+        }
+
 
         const buffer =
             await file.arrayBuffer();
@@ -2967,10 +3314,22 @@ async function readExcel(event){
             XLSX.read(
                 buffer,
                 {
-                    type:"array",
-                    raw:false
+                    type: "array",
+                    cellDates: false,
+                    cellNF: true
                 }
             );
+
+
+        if (
+            !workbook.SheetNames ||
+            !workbook.SheetNames.length
+        ) {
+
+            throw new Error(
+                "No worksheet found."
+            );
+        }
 
 
         const sheet =
@@ -2979,909 +3338,1030 @@ async function readExcel(event){
             ];
 
 
+        /*
+         * header: 1 means arrays.
+         *
+         * raw:false helps preserve displayed
+         * Excel text for barcodes.
+         */
+
         const rows =
             XLSX.utils.sheet_to_json(
                 sheet,
                 {
-                    defval:"",
-                    raw:false
+                    header: 1,
+                    raw: false,
+                    defval: ""
                 }
             );
 
 
-        importedProducts = [];
+        if (!rows.length) {
+
+            throw new Error(
+                "Excel file is empty."
+            );
+        }
 
 
-        for(
-            const row
-            of rows
-        ){
+        let headerIndex =
+            -1;
 
-            /*
-               ستون اول:
-               بارکد
-            */
-
-            let barcode =
-                row["بارکد"] ??
-                row["بارکد کالا"] ??
-                row["کد"] ??
-                row["کد کالا"] ??
-                "";
+        let columns =
+            null;
 
 
-            /*
-               ستون دوم:
-               نام کالا
-            */
+        /*
+         * Search the first 20 rows for
+         * the exact required headers.
+         */
 
-            let name =
-                row["نام کالا"] ??
-                row["نام"] ??
-                "";
+        for (
+            let i = 0;
+            i < Math.min(
+                rows.length,
+                20
+            );
+            i++
+        ) {
 
-
-            /*
-               ستون سوم:
-               فروش نقدی = قیمت
-            */
-
-            let price =
-                row["فروش نقدی"] ??
-                row["قیمت"] ??
-                "";
-
-
-            barcode =
-                normalizeBarcode(
-                    barcode
+            const detected =
+                findExcelColumns(
+                    rows[i] || []
                 );
 
 
-            name =
-                String(
-                    name
-                ).trim();
+            if (
+                detected.barcode !== -1 &&
+                detected.name !== -1 &&
+                detected.price !== -1
+            ) {
+
+                headerIndex =
+                    i;
+
+                columns =
+                    detected;
+
+                break;
+            }
+        }
 
 
-            price =
-                normalizeNumber(
-                    price
-                );
+        if (
+            headerIndex === -1
+        ) {
+
+            showStatus(
+                "excelStatus",
+                "ساختار فایل Excel قابل شناسایی نیست. ستون‌های «بارکد»، «نام کامل کالا» و «فروش نقدی» پیدا نشدند.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        const products = [];
+
+        const invalidRows = [];
+
+
+        for (
+            let i =
+                headerIndex + 1;
+
+            i < rows.length;
+
+            i++
+        ) {
+
+            const row =
+                rows[i] || [];
+
+
+            const rawBarcode =
+                row[
+                    columns.barcode
+                ];
+
+
+            const rawName =
+                row[
+                    columns.name
+                ];
+
+
+            const rawPrice =
+                row[
+                    columns.price
+                ];
 
 
             /*
-               ردیف ناقص حذف می‌شود.
-            */
+             * Completely empty row.
+             */
 
-            if(
-                !barcode ||
-                !name
-            ){
+            const empty =
+                [
+                    rawBarcode,
+                    rawName,
+                    rawPrice
+                ].every(
+                    value =>
+                        String(
+                            value ?? ""
+                        ).trim() === ""
+                );
 
+
+            if (empty) {
                 continue;
-
             }
 
 
-            importedProducts.push({
+            /*
+             * BARCODE:
+             * always STRING.
+             */
+
+            const code =
+                normalizeBarcode(
+                    rawBarcode
+                );
+
+
+            /*
+             * FULL PRODUCT NAME
+             */
+
+            const name =
+                String(
+                    rawName ?? ""
+                ).trim();
+
+
+            /*
+             * CASH SALE = PRICE
+             */
+
+            const price =
+                normalizePrice(
+                    rawPrice
+                );
+
+
+            const valid =
+                isValidBarcode(code) &&
+                name.length > 0 &&
+                price !== null;
+
+
+            if (!valid) {
+
+                invalidRows.push({
+                    row:
+                        i + 1,
+
+                    code,
+
+                    name,
+
+                    price
+                });
+
+                continue;
+            }
+
+
+            products.push({
 
                 code:
-                    barcode,
+                    String(code),
 
                 name:
                     name,
 
                 price:
                     price
-
             });
-
         }
 
 
-        /*
-           حذف بارکدهای تکراری
-        */
+        if (!products.length) {
 
-        const unique =
-            new Map();
-
-
-        importedProducts.forEach(
-            item => {
-
-                unique.set(
-                    item.code,
-                    item
-                );
-
-            }
-        );
-
-
-        importedProducts =
-            Array.from(
-                unique.values()
-            );
-
-
-        if(
-            !importedProducts.length
-        ){
-
-            showToast(
-                "ستون‌های بارکد و نام کالا پیدا نشد."
+            showStatus(
+                "excelStatus",
+                "هیچ محصول معتبر و قابل وارد کردنی در فایل پیدا نشد.",
+                "error"
             );
 
             return;
-
         }
 
 
-        await analyzeExcel();
+        importedProducts =
+            products;
 
 
-    }catch(error){
+        renderExcelPreview(
+            products,
+            invalidRows
+        );
+
+
+    } catch (error) {
 
         console.error(
-            "EXCEL ERROR:",
+            "Excel error:",
             error
         );
 
 
-        showToast(
-            "خطا در خواندن فایل Excel."
+        showStatus(
+            "excelStatus",
+            "ساختار فایل Excel قابل شناسایی نیست.",
+            "error"
         );
 
-    }
 
+        showTechnicalError(error);
+
+
+    } finally {
+
+        hideLoading();
+    }
 }
 
 
-/* =========================================================
-   NORMALIZE BARCODE
-========================================================= */
+/* ============================================================
+   EXCEL PREVIEW
+============================================================ */
 
-function normalizeBarcode(
-    value
-){
+function renderExcelPreview(
+    products,
+    invalidRows
+) {
 
-    if(
-        value ===
-        null ||
-        value ===
-        undefined
-    ){
-
-        return "";
-
-    }
+    $("previewBox")
+        .classList
+        .add("show");
 
 
-    /*
-       حذف .0 که Excel گاهی
-       به انتهای عدد اضافه می‌کند.
-    */
-
-    let text =
-        String(
-            value
-        )
-        .trim();
-
-
-    if(
-        text.endsWith(".0")
-    ){
-
-        text =
-            text.slice(
-                0,
-                -2
-            );
-
-    }
-
-
-    return text;
-
-}
-
-
-/* =========================================================
-   NORMALIZE NUMBER
-========================================================= */
-
-function normalizeNumber(
-    value
-){
-
-    if(
-        value ===
-        null ||
-        value ===
-        undefined
-    ){
-
-        return 0;
-
-    }
-
-
-    let text =
-        String(
-            value
+    let summary =
+        "تعداد محصولات: " +
+        products.length.toLocaleString(
+            "en-US"
         );
 
 
-    /*
-       اعداد فارسی
-       به انگلیسی
-    */
-
-    const persian =
-        "۰۱۲۳۴۵۶۷۸۹";
-
-
-    const arabic =
-        "٠١٢٣٤٥٦٧٨٩";
-
-
-    for(
-        let i=0;
-        i<10;
-        i++
-    ){
-
-        text =
-            text.replace(
-                new RegExp(
-                    persian[i],
-                    "g"
-                ),
-                String(i)
-            );
-
-
-        text =
-            text.replace(
-                new RegExp(
-                    arabic[i],
-                    "g"
-                ),
-                String(i)
-            );
-
-    }
-
-
-    /*
-       حذف کاما و جداکننده
-    */
-
-    text =
-        text.replace(
-            /,/g,
-            ""
-        );
-
-
-    text =
-        text.replace(
-            /[^\d.-]/g,
-            ""
-        );
-
-
-    const number =
-        Number(
-            text
-        );
-
-
-    return Number.isFinite(
-        number
-    )
-    ? number
-    : 0;
-
-}
-
-
-/* =========================================================
-   ANALYZE EXCEL
-========================================================= */
-
-async function analyzeExcel(){
-
-    const codes =
-        importedProducts.map(
-            item =>
-            item.code
-        );
-
-
-    let existingProducts = [];
-
-
-    const batchSize =
-        500;
-
-
-    for(
-        let i=0;
-        i<codes.length;
-        i+=batchSize
-    ){
-
-        const batch =
-            codes.slice(
-                i,
-                i+batchSize
-            );
-
-
-        const result =
-            await db
-            .from(TABLE_NAME)
-            .select(
-                "code,name,price"
-            )
-            .in(
-                "code",
-                batch
-            );
-
-
-        if(result.error){
-
-            console.error(
-                result.error
-            );
-
-
-            showToast(
-                "خطای دیتابیس: " +
-                result.error.message
-            );
-
-
-            return;
-
-        }
-
-
-        existingProducts.push(
-            ...(result.data || [])
-        );
-
-    }
-
-
-    const existing =
-        new Map();
-
-
-    existingProducts.forEach(
-        item => {
-
-            existing.set(
-                String(item.code),
-                item
-            );
-
-        }
-    );
-
-
-    let newCount = 0;
-
-    let priceChanged = 0;
-
-    let unchanged = 0;
-
-
-    importedProducts.forEach(
-        item => {
-
-            const old =
-                existing.get(
-                    item.code
-                );
-
-
-            if(!old){
-
-                newCount++;
-
-            }
-            else if(
-                Number(old.price || 0) !==
-                Number(item.price || 0)
-            ){
-
-                priceChanged++;
-
-            }
-            else{
-
-                unchanged++;
-
-            }
-
-        }
-    );
-
-
-    document
-    .getElementById(
-        "totalRows"
-    )
-    .innerText =
-    importedProducts.length;
-
-
-    document
-    .getElementById(
-        "newRows"
-    )
-    .innerText =
-    newCount;
-
-
-    document
-    .getElementById(
-        "priceChangedRows"
-    )
-    .innerText =
-    priceChanged;
-
-
-    document
-    .getElementById(
-        "unchangedRows"
-    )
-    .innerText =
-    unchanged;
-
-
-    document
-    .getElementById(
-        "importResult"
-    )
-    .style.display =
-    "block";
-
-
-    showToast(
-        "فایل آماده ورود است."
-    );
-
-}
-
-
-/* =========================================================
-   APPLY EXCEL
-========================================================= */
-
-async function applyImport(){
-
-    if(
-        !importedProducts.length
-    )
-        return;
-
-
-    const ok =
-        confirm(
-            "اطلاعات Excel وارد دیتابیس شود؟\n\nقیمت‌های قبلی محصولات قبل از تغییر ذخیره می‌شوند."
-        );
-
-
-    if(!ok)
-        return;
-
-
-    showToast(
-        "در حال بروزرسانی..."
-    );
-
-
-    /*
-       اول محصولات موجود را
-       می‌خوانیم تا قیمت قبلی
-       را از دست ندهیم.
-    */
-
-    const codes =
-        importedProducts.map(
-            item =>
-            item.code
-        );
-
-
-    let existingProducts = [];
-
-
-    const batchSize =
-        500;
-
-
-    for(
-        let i=0;
-        i<codes.length;
-        i+=batchSize
-    ){
-
-        const batch =
-            codes.slice(
-                i,
-                i+batchSize
-            );
-
-
-        const result =
-            await db
-            .from(TABLE_NAME)
-            .select(
-                "code,name,price,previous_price"
-            )
-            .in(
-                "code",
-                batch
-            );
-
-
-        if(result.error){
-
-            showToast(
-                "خطا: " +
-                result.error.message
-            );
-
-            return;
-
-        }
-
-
-        existingProducts.push(
-            ...(result.data || [])
-        );
-
-    }
-
-
-    const existing =
-        new Map();
-
-
-    existingProducts.forEach(
-        item => {
-
-            existing.set(
-                String(item.code),
-                item
-            );
-
-        }
-    );
-
-
-    /*
-       برای هر محصول:
-
-       اگر جدید است:
-       previous_price = null
-
-       اگر موجود است و قیمت تغییر کرده:
-       previous_price = قیمت فعلی
-       price = قیمت جدید
-    */
-
-    const rows =
-        importedProducts.map(
-            item => {
-
-                const old =
-                    existing.get(
-                        item.code
-                    );
-
-
-                if(!old){
-
-                    return {
-
-                        code:
-                            item.code,
-
-                        name:
-                            item.name,
-
-                        price:
-                            item.price,
-
-                        previous_price:
-                            null
-
-                    };
-
-                }
-
-
-                const oldPrice =
-                    Number(
-                        old.price || 0
-                    );
-
-
-                const newPrice =
-                    Number(
-                        item.price || 0
-                    );
-
-
-                return {
-
-                    code:
-                        item.code,
-
-                    name:
-                        item.name,
-
-                    price:
-                        newPrice,
-
-                    previous_price:
-                        oldPrice !== newPrice
-                        ? oldPrice
-                        : old.previous_price
-
-                };
-
-            }
-        );
-
-
-    /*
-       ورود به صورت batch
-    */
-
-    for(
-        let i=0;
-        i<rows.length;
-        i+=batchSize
-    ){
-
-        const batch =
-            rows.slice(
-                i,
-                i+batchSize
-            );
-
-
-        const result =
-            await db
-            .from(TABLE_NAME)
-            .upsert(
-                batch,
-                {
-                    onConflict:
-                        "code"
-                }
-            );
-
-
-        if(result.error){
-
-            console.error(
-                result.error
-            );
-
-
-            showToast(
-                "خطا در ورود Excel: " +
-                result.error.message
-            );
-
-
-            return;
-
-        }
-
-    }
-
-
-    importedProducts = [];
-
-
-    document
-    .getElementById(
-        "importResult"
-    )
-    .style.display =
-    "none";
-
-
-    document
-    .getElementById(
-        "excelFile"
-    )
-    .value =
-    "";
-
-
-    showToast(
-        "اطلاعات با موفقیت بروزرسانی شد."
-    );
-
-
-    testConnection();
-
-}
-
-
-/* =========================================================
-   CANCEL IMPORT
-========================================================= */
-
-function cancelImport(){
-
-    importedProducts = [];
-
-
-    document
-    .getElementById(
-        "importResult"
-    )
-    .style.display =
-    "none";
-
-
-    document
-    .getElementById(
-        "excelFile"
-    )
-    .value =
-    "";
-
-
-    showToast(
-        "عملیات لغو شد."
-    );
-
-}
-
-
-/* =========================================================
-   SEARCH ENTER
-========================================================= */
-
-document
-.getElementById(
-    "searchInput"
-)
-.addEventListener(
-    "keydown",
-    function(event){
-
-        if(
-            event.key ===
-            "Enter"
-        ){
-
-            searchProduct();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   PRICE INPUT
-========================================================= */
-
-document
-.getElementById(
-    "newPrice"
-)
-.addEventListener(
-    "input",
-    function(){
-
-        let value =
-            this.value
-            .replace(
-                /[^\d]/g,
-                ""
-            );
-
-
-        if(!value){
-
-            this.value =
-                "";
-
-            return;
-
-        }
-
-
-        this.value =
-            Number(
-                value
-            ).toLocaleString(
+    if (
+        invalidRows.length
+    ) {
+
+        summary +=
+            " • ردیف‌های خطادار: " +
+            invalidRows.length.toLocaleString(
                 "en-US"
             );
+    }
 
+
+    $("previewSummary")
+        .textContent =
+        summary;
+
+
+    const tbody =
+        $("previewTableBody");
+
+
+    tbody.innerHTML =
+        "";
+
+
+    /*
+     * Show first 10 valid products.
+     */
+
+    products
+        .slice(0, 10)
+        .forEach(
+            product => {
+
+                const tr =
+                    document.createElement(
+                        "tr"
+                    );
+
+
+                const code =
+                    document.createElement(
+                        "td"
+                    );
+
+                code.className =
+                    "barcode-cell";
+
+                code.textContent =
+                    product.code;
+
+
+                const name =
+                    document.createElement(
+                        "td"
+                    );
+
+                name.textContent =
+                    product.name;
+
+
+                const price =
+                    document.createElement(
+                        "td"
+                    );
+
+                price.textContent =
+                    formatPrice(
+                        product.price
+                    );
+
+
+                tr.appendChild(code);
+                tr.appendChild(name);
+                tr.appendChild(price);
+
+
+                tbody.appendChild(tr);
+            }
+        );
+
+
+    showStatus(
+        "excelStatus",
+        "اطلاعات فایل آماده ورود است.",
+        "success"
+    );
+}
+
+
+/* ============================================================
+   CANCEL EXCEL
+============================================================ */
+
+function cancelImport() {
+
+    if (importInProgress) {
+        return;
+    }
+
+
+    importedProducts =
+        [];
+
+
+    $("previewBox")
+        .classList
+        .remove("show");
+
+
+    $("excelFileInput").value =
+        "";
+
+
+    $("previewTableBody")
+        .innerHTML =
+        "";
+
+
+    hideStatus(
+        "excelStatus"
+    );
+}
+
+
+/* ============================================================
+   START EXCEL IMPORT
+============================================================ */
+
+$("startImportButton")
+    .addEventListener(
+        "click",
+        startExcelImport
+    );
+
+
+async function startExcelImport() {
+
+    if (
+        importInProgress ||
+        !importedProducts.length
+    ) {
+
+        return;
+    }
+
+
+    showTechnicalError(null);
+
+
+    const online =
+        await ensureConnection();
+
+
+    if (!online) {
+
+        showStatus(
+            "excelStatus",
+            "🔴 دیتابیس در دسترس نیست. وارد کردن انجام نشد.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    importInProgress =
+        true;
+
+
+    $("startImportButton")
+        .disabled =
+        true;
+
+
+    $("cancelImportButton")
+        .disabled =
+        true;
+
+
+    $("progressContainer")
+        .classList
+        .add("show");
+
+
+    const total =
+        importedProducts.length;
+
+
+    let successful = 0;
+
+    let failed = 0;
+
+    const errors = [];
+
+
+    try {
+
+        for (
+            let start = 0;
+
+            start < total;
+
+            start +=
+                IMPORT_BATCH_SIZE
+        ) {
+
+            const end =
+                Math.min(
+                    start +
+                    IMPORT_BATCH_SIZE,
+                    total
+                );
+
+
+            const batch =
+                importedProducts.slice(
+                    start,
+                    end
+                );
+
+
+            $("progressText")
+                .textContent =
+                "در حال وارد کردن اطلاعات...";
+
+
+            try {
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * Only:
+                 *
+                 * code
+                 * name
+                 * price
+                 *
+                 * are sent.
+                 *
+                 * previous_price is NOT touched.
+                 */
+
+                const {
+                    error
+                } = await db
+                    .from("products")
+                    .upsert(
+
+                        batch.map(
+                            product => ({
+
+                                code:
+                                    String(
+                                        product.code
+                                    ),
+
+                                name:
+                                    product.name,
+
+                                price:
+                                    product.price
+
+                            })
+                        ),
+
+                        {
+                            onConflict:
+                                "code"
+                        }
+                    );
+
+
+                if (error) {
+                    throw error;
+                }
+
+
+                successful +=
+                    batch.length;
+
+
+            } catch (error) {
+
+                console.error(
+                    "Batch error:",
+                    error
+                );
+
+
+                failed +=
+                    batch.length;
+
+
+                errors.push({
+                    start,
+                    end,
+                    error
+                });
+            }
+
+
+            const completed =
+                Math.min(
+                    end,
+                    total
+                );
+
+
+            const percent =
+                Math.round(
+                    (
+                        completed /
+                        total
+                    ) * 100
+                );
+
+
+            $("progressCount")
+                .textContent =
+                `${completed} / ${total}`;
+
+
+            $("progressFill")
+                .style
+                .width =
+                percent + "%";
+        }
+
+
+        $("progressText")
+            .textContent =
+            "وارد کردن به پایان رسید.";
+
+
+        if (
+            failed === 0
+        ) {
+
+            showStatus(
+                "excelStatus",
+
+                `وارد کردن با موفقیت انجام شد. تعداد موفق: ${successful.toLocaleString("en-US")} مورد.`,
+
+                "success"
+            );
+
+        } else {
+
+            showStatus(
+                "excelStatus",
+
+                `وارد کردن انجام شد. تعداد موفق: ${successful.toLocaleString("en-US")}، تعداد خطادار: ${failed.toLocaleString("en-US")}.`,
+
+                "warning"
+            );
+
+
+            if (errors.length) {
+
+                showTechnicalError(
+                    errors
+                );
+            }
+        }
+
+
+        await checkConnection(
+            false
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Import error:",
+            error
+        );
+
+
+        showStatus(
+            "excelStatus",
+            "خطایی هنگام وارد کردن اطلاعات رخ داد.",
+            "error"
+        );
+
+
+        showTechnicalError(
+            error
+        );
+
+
+    } finally {
+
+        importInProgress =
+            false;
+
+
+        $("startImportButton")
+            .disabled =
+            false;
+
+
+        $("cancelImportButton")
+            .disabled =
+            false;
+    }
+}
+
+
+/* ============================================================
+   EVENT LISTENERS
+============================================================ */
+
+$("searchButton")
+    .addEventListener(
+        "click",
+        () =>
+            searchProduct()
+    );
+
+
+$("barcodeInput")
+    .addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                event.preventDefault();
+
+                searchProduct();
+            }
+        }
+    );
+
+
+$("barcodeInput")
+    .addEventListener(
+        "input",
+        event => {
+
+            /*
+             * Keep barcode as text.
+             */
+
+            event.target.value =
+                event.target.value.trim();
+        }
+    );
+
+
+$("retryConnectionButton")
+    .addEventListener(
+        "click",
+        () =>
+            checkConnection(true)
+    );
+
+
+$("startScannerButton")
+    .addEventListener(
+        "click",
+        startScanner
+    );
+
+
+$("retryScannerButton")
+    .addEventListener(
+        "click",
+        async () => {
+
+            await stopScanner();
+
+            $("reader").innerHTML =
+                "";
+
+            scanner =
+                null;
+
+            await startScanner();
+        }
+    );
+
+
+$("closeScannerButton")
+    .addEventListener(
+        "click",
+        closeScanner
+    );
+
+
+$("editPriceButton")
+    .addEventListener(
+        "click",
+        openPriceEditor
+    );
+
+
+$("previousPriceButton")
+    .addEventListener(
+        "click",
+        togglePreviousPrice
+    );
+
+
+$("savePriceButton")
+    .addEventListener(
+        "click",
+        savePrice
+    );
+
+
+$("cancelEditButton")
+    .addEventListener(
+        "click",
+        closePriceEditor
+    );
+
+
+$("newPriceInput")
+    .addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                event.preventDefault();
+
+                savePrice();
+            }
+
+
+            if (
+                event.key ===
+                "Escape"
+            ) {
+
+                event.preventDefault();
+
+                closePriceEditor();
+            }
+        }
+    );
+
+
+$("newPriceInput")
+    .addEventListener(
+        "input",
+        event => {
+
+            event.target.value =
+                event.target.value.replace(
+                    /[^\d۰-۹٠-٩,٬]/g,
+                    ""
+                );
+        }
+    );
+
+
+$("cancelImportButton")
+    .addEventListener(
+        "click",
+        cancelImport
+    );
+
+
+/* ============================================================
+   DEVELOPER TESTS
+============================================================ */
+
+$("testConnectionButton")
+    .addEventListener(
+        "click",
+        async () => {
+
+            showStatus(
+                "developerStatus",
+                "در حال تست اتصال...",
+                "warning"
+            );
+
+
+            const result =
+                await checkConnection(
+                    false
+                );
+
+
+            if (result) {
+
+                showStatus(
+                    "developerStatus",
+                    "🟢 اتصال موفق بود.",
+                    "success"
+                );
+
+            } else {
+
+                showStatus(
+                    "developerStatus",
+                    "🔴 اتصال ناموفق بود.",
+                    "error"
+                );
+            }
+        }
+    );
+
+
+$("testProductButton")
+    .addEventListener(
+        "click",
+        async () => {
+
+            const code =
+                normalizeBarcode(
+                    $("testBarcodeInput").value
+                );
+
+
+            $("barcodeInput").value =
+                code;
+
+
+            await searchProduct(
+                code
+            );
+        }
+    );
+
+
+/* ============================================================
+   INITIALIZATION
+============================================================ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+        hideProduct();
+
+        await checkConnection(
+            true
+        );
     }
 );
 
 
-/* =========================================================
-   TOAST
-========================================================= */
-
-let toastTimer;
-
-
-function showToast(
-    message
-){
-
-    const toast =
-        document
-        .getElementById(
-            "toast"
-        );
-
-
-    toast.innerText =
-        message;
-
-
-    toast.classList.add(
-        "show"
-    );
-
-
-    clearTimeout(
-        toastTimer
-    );
-
-
-    toastTimer =
-        setTimeout(
-            function(){
-
-                toast.classList.remove(
-                    "show"
-                );
-
-            },
-            3500
-        );
-
-}
-
-
-/* =========================================================
-   INITIALIZATION
-========================================================= */
+/* ============================================================
+   NETWORK STATUS
+============================================================ */
 
 window.addEventListener(
-    "load",
-    function(){
+    "online",
+    async () => {
 
-        testConnection();
+        await checkConnection(
+            false
+        );
+    }
+);
 
+
+window.addEventListener(
+    "offline",
+    () => {
+
+        databaseOnline =
+            false;
+
+
+        $("connectionBadge")
+            .classList
+            .remove("online");
+
+
+        $("connectionBadge")
+            .classList
+            .add("offline");
+
+
+        $("connectionText")
+            .textContent =
+            "آفلاین";
+
+
+        $("connectionTitle")
+            .textContent =
+            "🔴 دیتابیس در دسترس نیست";
+
+
+        $("connectionDescription")
+            .textContent =
+            "اتصال اینترنت دستگاه قطع شده است.";
+    }
+);
+
+
+/* ============================================================
+   PAGE VISIBILITY
+============================================================ */
+
+document.addEventListener(
+    "visibilitychange",
+    async () => {
+
+        if (
+            document.visibilityState ===
+            "visible"
+        ) {
+
+            await checkConnection(
+                false
+            );
+        }
+    }
+);
+
+
+/* ============================================================
+   CAMERA CLEANUP
+============================================================ */
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        if (
+            scanner &&
+            scannerRunning
+        ) {
+
+            try {
+                scanner.stop();
+            } catch {}
+        }
     }
 );
 
 </script>
-
 
 </body>
 </html>
